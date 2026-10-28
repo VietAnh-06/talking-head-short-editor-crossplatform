@@ -1,0 +1,9 @@
+node_modules/
+out/
+.venv-align/
+.bin/
+.venv-vieneu/
+public/footage/
+public/broll/
+public/sfx/
+public/sfx-norm/

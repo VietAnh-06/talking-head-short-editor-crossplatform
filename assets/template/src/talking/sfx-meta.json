@@ -1,0 +1,312 @@
+{
+ "achievement": {
+  "onset": 0.0,
+  "peak": 0.122,
+  "end": 0.848
+ },
+ "alarm-tone": {
+  "onset": 0.004,
+  "peak": 0.142,
+  "end": 0.672
+ },
+ "amb-city": {
+  "onset": 0.0,
+  "peak": 18.083,
+  "end": 62.559
+ },
+ "amb-office": {
+  "onset": 0.0,
+  "peak": 14.393,
+  "end": 42.096
+ },
+ "amb-restaurant": {
+  "onset": 0.0,
+  "peak": 31.069,
+  "end": 120.0
+ },
+ "atm-key": {
+  "onset": 0.003,
+  "peak": 0.056,
+  "end": 0.187
+ },
+ "bass-hit-future": {
+  "onset": 0.019,
+  "peak": 0.211,
+  "end": 0.804
+ },
+ "bass-hit": {
+  "onset": 0.057,
+  "peak": 0.086,
+  "end": 0.61
+ },
+ "click-check": {
+  "onset": 0.096,
+  "peak": 0.106,
+  "end": 0.171
+ },
+ "click-interface": {
+  "onset": 0.0,
+  "peak": 0.006,
+  "end": 0.038
+ },
+ "click-select": {
+  "onset": 0.0,
+  "peak": 0.019,
+  "end": 0.03
+ },
+ "clock-fast": {
+  "onset": 0.098,
+  "peak": 1.598,
+  "end": 2.256
+ },
+ "clock-tick": {
+  "onset": 0.096,
+  "peak": 1.125,
+  "end": 11.633
+ },
+ "coin-notify": {
+  "onset": 0.0,
+  "peak": 0.257,
+  "end": 0.861
+ },
+ "coin-win": {
+  "onset": 0.004,
+  "peak": 0.17,
+  "end": 1.698
+ },
+ "coins-clink": {
+  "onset": 0.023,
+  "peak": 0.512,
+  "end": 0.727
+ },
+ "coins-handling": {
+  "onset": 0.023,
+  "peak": 0.13,
+  "end": 0.449
+ },
+ "confirm": {
+  "onset": 0.001,
+  "peak": 0.198,
+  "end": 0.408
+ },
+ "correct": {
+  "onset": 0.0,
+  "peak": 0.028,
+  "end": 0.455
+ },
+ "dot-print": {
+  "onset": 0.096,
+  "peak": 0.356,
+  "end": 0.84
+ },
+ "factory-hit": {
+  "onset": 0.086,
+  "peak": 0.266,
+  "end": 1.004
+ },
+ "fail-low": {
+  "onset": 0.013,
+  "peak": 0.272,
+  "end": 0.858
+ },
+ "heartbeat": {
+  "onset": 0.037,
+  "peak": 0.081,
+  "end": 1.195
+ },
+ "impact-big": {
+  "onset": 0.942,
+  "peak": 2.176,
+  "end": 4.25
+ },
+ "impact-deep": {
+  "onset": 0.221,
+  "peak": 0.633,
+  "end": 1.378
+ },
+ "impact-trailer": {
+  "onset": 0.035,
+  "peak": 0.96,
+  "end": 2.551
+ },
+ "impact-whoosh": {
+  "onset": 0.032,
+  "peak": 0.943,
+  "end": 2.57
+ },
+ "level-complete": {
+  "onset": 0.048,
+  "peak": 1.664,
+  "end": 2.426
+ },
+ "level-up": {
+  "onset": 0.003,
+  "peak": 0.745,
+  "end": 1.663
+ },
+ "money-bag": {
+  "onset": 0.1,
+  "peak": 0.117,
+  "end": 0.421
+ },
+ "page-turn": {
+  "onset": 0.01,
+  "peak": 0.141,
+  "end": 0.377
+ },
+ "paper-crumple": {
+  "onset": 0.009,
+  "peak": 0.342,
+  "end": 0.659
+ },
+ "paper-slice": {
+  "onset": 0.019,
+  "peak": 0.163,
+  "end": 0.277
+ },
+ "pencil": {
+  "onset": 0.008,
+  "peak": 1.579,
+  "end": 1.817
+ },
+ "plates": {
+  "onset": 0.002,
+  "peak": 0.299,
+  "end": 0.431
+ },
+ "pop-bubble": {
+  "onset": 0.008,
+  "peak": 0.243,
+  "end": 0.304
+ },
+ "pop-cluster": {
+  "onset": 0.013,
+  "peak": 0.824,
+  "end": 1.431
+ },
+ "pop-dry": {
+  "onset": 0.029,
+  "peak": 0.044,
+  "end": 0.226
+ },
+ "pop-explainer": {
+  "onset": 0.01,
+  "peak": 0.035,
+  "end": 0.158
+ },
+ "pop-hard": {
+  "onset": 0.001,
+  "peak": 0.048,
+  "end": 0.076
+ },
+ "pop-long": {
+  "onset": 0.015,
+  "peak": 0.038,
+  "end": 0.07
+ },
+ "pot-lid": {
+  "onset": 0.015,
+  "peak": 0.049,
+  "end": 0.166
+ },
+ "record-scratch": {
+  "onset": 0.011,
+  "peak": 0.233,
+  "end": 1.058
+ },
+ "riser-trailer": {
+  "onset": 0.933,
+  "peak": 2.495,
+  "end": 2.575
+ },
+ "signing": {
+  "onset": 0.024,
+  "peak": 2.094,
+  "end": 2.22
+ },
+ "sink-water": {
+  "onset": 0.0,
+  "peak": 5.921,
+  "end": 10.411
+ },
+ "sizzle": {
+  "onset": 0.0,
+  "peak": 14.154,
+  "end": 22.519
+ },
+ "slide-tech": {
+  "onset": 0.009,
+  "peak": 0.176,
+  "end": 0.495
+ },
+ "steam": {
+  "onset": 0.144,
+  "peak": 0.652,
+  "end": 1.339
+ },
+ "sweep-air": {
+  "onset": 0.078,
+  "peak": 0.327,
+  "end": 0.7
+ },
+ "sweep-fast": {
+  "onset": 0.25,
+  "peak": 0.489,
+  "end": 0.7
+ },
+ "sweep-small": {
+  "onset": 0.095,
+  "peak": 0.337,
+  "end": 0.578
+ },
+ "swoosh-fast": {
+  "onset": 0.065,
+  "peak": 0.103,
+  "end": 0.253
+ },
+ "swoosh-flying": {
+  "onset": 0.276,
+  "peak": 0.54,
+  "end": 1.018
+ },
+ "swoosh-vacuum": {
+  "onset": 0.186,
+  "peak": 1.569,
+  "end": 1.896
+ },
+ "typewriter-bell": {
+  "onset": 0.109,
+  "peak": 0.162,
+  "end": 1.414
+ },
+ "typing": {
+  "onset": 0.002,
+  "peak": 10.904,
+  "end": 19.586
+ },
+ "whoosh-cinematic": {
+  "onset": 0.197,
+  "peak": 1.078,
+  "end": 1.23
+ },
+ "whoosh-fast": {
+  "onset": 0.235,
+  "peak": 0.726,
+  "end": 0.763
+ },
+ "wind-swoosh": {
+  "onset": 0.034,
+  "peak": 0.165,
+  "end": 0.29
+ },
+ "zoom-impact": {
+  "onset": 0.084,
+  "peak": 0.518,
+  "end": 0.659
+ },
+ "zoom-vacuum": {
+  "onset": 0.239,
+  "peak": 0.454,
+  "end": 0.534
+ }
+}

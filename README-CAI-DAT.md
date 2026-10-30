@@ -19,10 +19,16 @@ Yêu cầu chung: Node.js 22+, FFmpeg, ImageMagick 7 (`magick`), uv, Git, Intern
 
 Yêu cầu: Windows 11 hoặc Windows 10 21H2 trở lên, máy Intel/AMD 64-bit (chưa hỗ trợ Windows ARM), có `winget` (App Installer).
 
-1. Giải nén **toàn bộ thư mục**, rồi nhấp đúp **`setup-windows.cmd`**. Nhập thư mục project muốn cài, ví dụ `D:\Video Projects\kenh-cua-toi`; có thể chọn ổ D, E hoặc ổ khác. Nhấn Enter để dùng vị trí mặc định theo tên project.
+1. Mở **`talking-head-short-editor-setup.exe`**. Đây là bộ cài một file, đã chứa skill, template và các script; không cần giải nén hay cài Python trước. Nhập đường dẫn hoặc bấm **Chọn thư mục…**, ví dụ `D:\Video Projects\kenh-cua-toi`, rồi bấm **Cài đặt**. Có thể chọn ổ D, E hoặc ổ khác.
 2. Bộ cài dùng `winget` để cài những gì còn thiếu: Git, Node.js LTS, FFmpeg, ImageMagick, uv. Với Node.js, bộ cài kiểm tra phiên bản trước: chưa có thì cài bản LTS, đã có từ 22 trở lên thì giữ nguyên, dưới 22 thì tự nâng cấp bằng `winget upgrade` (dùng bộ cài LTS nếu bản cũ không được nhận diện), rồi kiểm tra lại trước khi tiếp tục. Bạn không cần tự gỡ Node.js cũ. Windows có thể hiện hộp thoại quyền quản trị. Bộ cài đặt biến người dùng `PYTHONUTF8=1` để script in được tiếng Việt.
 3. Skill được chép vào `%USERPROFILE%\.claude\skills\talking-head-short-editor`. Bản cũ (nếu có) được chuyển vào `%USERPROFILE%\.local\share\talking-head-setup\backups\`.
 4. Project nằm đúng tại thư mục đã chọn, mặc định là `%USERPROFILE%\videos\talking-head-shorts`. Bộ cài chạy npm, tạo môi trường Whisper và VieNeu, sinh nhạc, tải SFX, kiểm TypeScript và thử mở trình duyệt render. **Whisper large-v3 (~3 GB) và model VieNeu chỉ tải khi dùng lần đầu.**
+
+Tiến trình và lỗi hiện trong cửa sổ bộ cài; bấm **Xem log** để mở log đầy đủ. Khi cài lỗi, sửa nguyên nhân rồi bấm **Thử lại** với cùng thư mục. Khi hoàn tất, bấm **Mở project**. Có thể chọn **Chỉ cài công cụ và skill, tạo project sau**. Trong lúc cài, hãy chờ tiến trình kết thúc trước khi đóng cửa sổ.
+
+Bộ cài cần Internet để tải công cụ và các gói phụ thuộc, chưa phải bản cài offline. Bản build từ mã nguồn hiện chưa ký số. Chạy bộ cài bằng tài khoản sử dụng Claude Code; các công cụ cần quyền quản trị sẽ tự yêu cầu quyền riêng.
+
+Nếu dùng bản mã nguồn, vẫn có thể giải nén toàn bộ thư mục rồi chạy `setup-windows.cmd` hoặc dùng PowerShell như dưới đây.
 
 Chạy trong PowerShell để chỉ định đường dẫn trực tiếp, chọn tên mặc định, hoặc chỉ cài công cụ và skill:
 
@@ -54,6 +60,18 @@ uv run ~/.claude/skills/talking-head-short-editor/scripts/new-video.py \
 ```
 
 Nếu cài lỗi, đọc thông báo ngay phía trên và log trong `%LOCALAPPDATA%\talking-head-short-editor\logs`, sửa nguyên nhân rồi chạy lại **với cùng đường dẫn project** (nhập lại khi được hỏi hoặc dùng `-ProjectDirectory`). Project cài dở được tiếp tục; project đã cài xong được giữ lại; thư mục chứa dữ liệu khác bị từ chối trước khi cài công cụ, khi đó hãy chọn thư mục trống khác.
+
+### Đóng gói bộ cài `.exe` từ mã nguồn
+
+Trên Windows x64, tại thư mục mã nguồn, chạy:
+
+```powershell
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\build-windows-installer.ps1
+```
+
+Kết quả: `dist/talking-head-short-editor-setup.exe` và file kiểm tra SHA-256 `.exe.sha256`. Chỉ cần gửi file `.exe` cho người dùng. Dùng `-OutputDirectory "D:\Releases"` nếu muốn đổi nơi lưu bản build. Mỗi lần sửa skill/template/script, chạy lại lệnh build để cập nhật nội dung trong `.exe`.
+
+Luồng build dùng trình biên dịch .NET Framework có sẵn trong Windows, không cần cài Inno Setup, SDK .NET hay Python. `.exe` chứa giao diện Windows Forms và gói dữ liệu nhúng, sau đó gọi `setup-windows.ps1` bằng Windows PowerShell. Source nằm trong `installer/windows/`; build chỉ lấy mã nguồn, tài liệu và font, bỏ qua môi trường ảo, `node_modules`, cache và output. File build nằm ngoài Git.
 
 ## Cài tự động trên macOS
 

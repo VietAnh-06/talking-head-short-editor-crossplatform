@@ -13,3 +13,7 @@ node_modules/
 .bin/
 out/
 *.log
+
+# Generated Windows installer and build staging
+/build/
+/dist/

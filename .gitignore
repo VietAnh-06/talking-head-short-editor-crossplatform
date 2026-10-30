@@ -1,0 +1,15 @@
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+.venv-*/
+.pytest_cache/
+
+# Node dependencies and TypeScript build cache
+node_modules/
+*.tsbuildinfo
+
+# Downloaded tools, render output, and logs
+.bin/
+out/
+*.log

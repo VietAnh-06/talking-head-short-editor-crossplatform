@@ -51,11 +51,11 @@ $succeeded = $false
 $message = ''
 $retainedSessionPath = $false
 try {
-    Ensure-NodeJs
+    Install-NodeJs
     $env:Path += ';' + $env:NODE_TEST_SESSION_ONLY
     & $realPathRefresh
     $retainedSessionPath = ($env:Path -split ';') -contains $env:NODE_TEST_SESSION_ONLY
-    Ensure-NodeJs
+    Install-NodeJs
     $succeeded = $true
 } catch { $message = $_.Exception.Message }
 Write-Output ('NODE_TEST_RESULT:' + (@{

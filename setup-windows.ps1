@@ -58,7 +58,7 @@ function Test-NodeVersion {
     return ($null -ne $version -and [int]($version.Substring(1).Split('.')[0]) -ge 22)
 }
 
-function Ensure-NodeJs {
+function Install-NodeJs {
     $current = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (Test-NodeVersion) {
         $script:NodeDirectory = Split-Path -Parent $current.Source
@@ -106,6 +106,7 @@ function Ensure-NodeJs {
     }
     Write-Host "Node.js san sang: $(Get-NodeVersion)"
 }
+Set-Alias Ensure-NodeJs Install-NodeJs
 
 try {
     if ($env:OS -ne 'Windows_NT') { throw 'Script nay chi chay tren Windows.' }
@@ -130,7 +131,7 @@ try {
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw 'Khong tim thay winget. Cai "App Installer" tu Microsoft Store (https://aka.ms/getwinget) roi chay lai.'
     }
-    Ensure-NodeJs
+    Install-NodeJs
     foreach ($command in $Packages.Keys) {
         $present = [bool](Get-Command $command -ErrorAction SilentlyContinue)
         if ($present) { Write-Host "Da co: $command"; continue }

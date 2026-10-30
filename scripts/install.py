@@ -90,5 +90,5 @@ run(["npm", "run", "typecheck"])
 run(["npx", "--no-install", "remotion", "browser", "ensure"])
 # Mở Chrome thật: chỉ tải về thì không bắt được thiếu thư viện hệ thống.
 run(["node", "--input-type=module", "-e",
-     'import {openBrowser} from "@remotion/renderer"; const b = await openBrowser("chrome"); await b.close(); console.log("Render browser OK");'])
+     'import {openBrowser} from "@remotion/renderer"; const b = await openBrowser("chrome"); await b.close({silent: true}); console.log("Render browser OK");'])
 print(f"\nProject sẵn sàng: {project}\nModel whisper và VieNeu tải ở lần chép lời / đọc giọng đầu tiên.")

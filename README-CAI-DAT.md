@@ -20,7 +20,7 @@ Yêu cầu chung: Node.js 22+, FFmpeg, ImageMagick 7 (`magick`), uv, Git, Intern
 Yêu cầu: Windows 11 hoặc Windows 10 21H2 trở lên, máy Intel/AMD 64-bit (chưa hỗ trợ Windows ARM), có `winget` (App Installer).
 
 1. Giải nén **toàn bộ thư mục**, rồi nhấp đúp **`setup-windows.cmd`**.
-2. Bộ cài dùng `winget` để cài những gì còn thiếu: Git, Node.js LTS, FFmpeg, ImageMagick, uv. Windows có thể hiện hộp thoại quyền quản trị. Bộ cài đặt biến người dùng `PYTHONUTF8=1` để script in được tiếng Việt.
+2. Bộ cài dùng `winget` để cài những gì còn thiếu: Git, Node.js LTS, FFmpeg, ImageMagick, uv. Với Node.js, bộ cài kiểm tra phiên bản trước: chưa có thì cài bản LTS, đã có từ 22 trở lên thì giữ nguyên, dưới 22 thì tự nâng cấp bằng `winget upgrade` (dùng bộ cài LTS nếu bản cũ không được nhận diện), rồi kiểm tra lại trước khi tiếp tục. Bạn không cần tự gỡ Node.js cũ. Windows có thể hiện hộp thoại quyền quản trị. Bộ cài đặt biến người dùng `PYTHONUTF8=1` để script in được tiếng Việt.
 3. Skill được chép vào `%USERPROFILE%\.claude\skills\talking-head-short-editor`. Bản cũ (nếu có) được chuyển vào `%USERPROFILE%\.local\share\talking-head-setup\backups\`.
 4. Project mặc định nằm ở `%USERPROFILE%\videos\talking-head-shorts`. Bộ cài chạy npm, tạo môi trường Whisper và VieNeu, sinh nhạc, tải SFX, kiểm TypeScript và thử mở trình duyệt render. **Whisper large-v3 (~3 GB) và model VieNeu chỉ tải khi dùng lần đầu.**
 
@@ -57,7 +57,9 @@ bash setup-macos.sh                                      # hoặc: bash setup-ma
 bash setup-macos.sh --skip-project                       # chỉ cài công cụ và skill
 ```
 
-Bộ cài dùng `brew install` cho những gì còn thiếu (node, ffmpeg, imagemagick, uv, git), chép skill vào `~/.claude/skills/talking-head-short-editor`, rồi tạo project tại `~/videos/talking-head-shorts` giống như trên Windows. Log nằm ở `~/Library/Logs/talking-head-short-editor/`. Sau đó cài Claude Code và đăng nhập.
+Bộ cài dùng `brew install` cho những gì còn thiếu (node, ffmpeg, imagemagick, uv, git). Node.js từ 22 trở lên được giữ nguyên; nếu chưa có thì cài, nếu dưới 22 thì nâng cấp bằng `brew upgrade node` khi Homebrew đã quản lý gói `node`, hoặc cài gói này khi bản cũ được cài theo cách khác. Bộ cài dùng Node.js vừa cài/nâng cấp trong phiên setup và kiểm tra lại phiên bản trước khi tiếp tục. Sau đó chép skill vào `~/.claude/skills/talking-head-short-editor`, rồi tạo project tại `~/videos/talking-head-shorts` giống như trên Windows. Log nằm ở `~/Library/Logs/talking-head-short-editor/`. Sau đó cài Claude Code và đăng nhập.
+
+Nếu dùng trình quản lý phiên bản như nvm/fnm/Volta, cấu hình của trình quản lý đó có thể chọn lại Node.js cũ khi mở terminal mới; hãy chọn Node.js từ 22 trở lên trong trình quản lý đó trước khi chạy Studio.
 
 ## Cài thủ công (Linux hoặc khi không muốn dùng bộ cài)
 

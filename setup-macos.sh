@@ -19,15 +19,56 @@ log="$log_dir/setup-$(date +%Y%m%d-%H%M%S).log"
 exec > >(tee -a "$log") 2>&1
 echo "Log: $log"
 
+node_version() {
+  local version
+  command -v node >/dev/null || return 1
+  version=$(node --version 2>/dev/null) || return 1
+  [[ $version =~ ^v([0-9]+)\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]] || return 1
+  printf '%s\n' "$version"
+}
+node_ok() {
+  local version
+  version=$(node_version) || return 1
+  version=${version#v}
+  (( ${version%%.*} >= 22 ))
+}
+ensure_node() {
+  local version node_prefix
+  if node_ok; then
+    printf 'Đã có Node.js %s (>= 22), giữ nguyên.\n' "$(node_version)"
+    return
+  fi
+  version=$(node_version || true)
+  if command -v node >/dev/null; then
+    printf '\n==> Cập nhật Node.js %s lên bản mới (cần >= 22)\n' "$version"
+  else
+    printf '\n==> Chưa có Node.js. Cài bản mới (cần >= 22)\n'
+  fi
+  if brew list --versions node >/dev/null 2>&1; then
+    brew upgrade node
+  else
+    brew install node
+  fi
+  # Use the upgraded Homebrew Node even when an old portable/version-managed Node is first in PATH.
+  node_prefix=$(brew --prefix node)
+  export PATH="$node_prefix/bin:$PATH"
+  hash -r
+  node_ok || fail "Đã thử cài/cập nhật nhưng chưa chạy được Node.js >= 22 (hiện tại: $(node_version || true)). Xem log và kiểm tra PATH/trình quản lý phiên bản Node.js."
+  printf 'Node.js sẵn sàng: %s\n' "$(node_version)"
+}
+
+# Preserve an already compatible Node when Homebrew's shellenv changes PATH.
+node_directory=''
+if node_ok; then node_directory=$(dirname "$(command -v node)"); fi
 # Homebrew đặt ở /opt/homebrew (Apple Silicon) hoặc /usr/local (Intel); Terminal mới mở có thể chưa có trong PATH.
 for prefix in /opt/homebrew /usr/local; do
   [[ -x $prefix/bin/brew ]] && eval "$("$prefix/bin/brew" shellenv)"
 done
 command -v brew >/dev/null || fail 'Chưa có Homebrew. Cài theo https://brew.sh rồi chạy lại: bash setup-macos.sh'
+if [[ -n $node_directory ]]; then export PATH="$node_directory:$PATH"; fi
 
-node_ok() { command -v node >/dev/null && node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 22 ? 0 : 1)'; }
+ensure_node
 missing=()
-node_ok || missing+=(node)
 command -v ffmpeg >/dev/null || missing+=(ffmpeg)
 command -v magick >/dev/null || missing+=(imagemagick)
 command -v uv >/dev/null || missing+=(uv)
@@ -36,7 +77,6 @@ if (( ${#missing[@]} )); then
   printf '\n==> Cài bằng Homebrew: %s\n' "${missing[*]}"
   brew install "${missing[@]}"
 fi
-node_ok || fail 'Cần Node.js 22 trở lên (brew upgrade node, hoặc bỏ bản Node cũ khỏi PATH).'
 for tool in node npm npx ffmpeg ffprobe magick uv; do
   command -v "$tool" >/dev/null || fail "Đã cài nhưng chưa thấy lệnh $tool trong PATH."
 done

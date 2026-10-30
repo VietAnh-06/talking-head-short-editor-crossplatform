@@ -19,11 +19,11 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $transcribing = $false
+$script:NodeDirectory = $null
 
 # Command name -> winget package. Git is also what Claude Code for Windows uses as its shell (Git Bash).
 $Packages = [ordered]@{
     'git'    = 'Git.Git'
-    'node'   = 'OpenJS.NodeJS.LTS'
     'ffmpeg' = 'Gyan.FFmpeg'
     'magick' = 'ImageMagick.ImageMagick'
     'uv'     = 'astral-sh.uv'
@@ -33,13 +33,78 @@ function Update-SessionPath {
     # winget updates the registry PATH; reload it so this session sees the new tools.
     $machine = [Environment]::GetEnvironmentVariable('Path', 'Machine')
     $user = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:Path = (@($machine, $user) | Where-Object { $_ }) -join ';'
+    # Keep a verified Node first, plus tools added only to the calling terminal's PATH.
+    $paths = (@($script:NodeDirectory, $machine, $user, $env:Path) | Where-Object { $_ }) -join ';'
+    $env:Path = ($paths -split ';' | Where-Object { $_ } | Select-Object -Unique) -join ';'
+}
+
+function Get-NodeVersion {
+    param([string]$NodeCommand = 'node')
+    if (-not (Get-Command $NodeCommand -CommandType Application -ErrorAction SilentlyContinue)) { return $null }
+    # PowerShell 5.1 strips the nested quotes from `node -p` JavaScript
+    # expressions, so parse the stable `vMAJOR.MINOR.PATCH` output instead.
+    try {
+        $version = ((& $NodeCommand --version 2>$null) -join '').Trim()
+        if ($LASTEXITCODE -ne 0 -or $version -notmatch '^v\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$') { return $null }
+        return $version
+    } catch {
+        return $null
+    }
 }
 
 function Test-NodeVersion {
-    if (-not (Get-Command node -ErrorAction SilentlyContinue)) { return $false }
-    $major = [int]((& node -p 'process.versions.node.split(".")[0]') -join '')
-    return $major -ge 22
+    param([string]$NodeCommand = 'node')
+    $version = Get-NodeVersion -NodeCommand $NodeCommand
+    return ($null -ne $version -and [int]($version.Substring(1).Split('.')[0]) -ge 22)
+}
+
+function Ensure-NodeJs {
+    $current = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (Test-NodeVersion) {
+        $script:NodeDirectory = Split-Path -Parent $current.Source
+        Write-Host "Da co Node.js $(Get-NodeVersion) (>= 22), giu nguyen."
+        return
+    }
+
+    $id = 'OpenJS.NodeJS.LTS'
+    $packageArgs = @('--id', $id, '--exact', '--source', 'winget', '--silent', '--accept-package-agreements', '--accept-source-agreements')
+    if ($current) {
+        Write-Host "`n==> Cap nhat Node.js $(Get-NodeVersion) len ban LTS (can >= 22; Windows co the hien hop thoai UAC)"
+        & winget upgrade @packageArgs --include-unknown | Out-Host
+        $result = $LASTEXITCODE
+        # An older MSI or another Node release may not be registered as the LTS package.
+        # Let the LTS installer perform the upgrade without requiring a manual uninstall.
+        if ($result -eq -1978335212 -or $result -eq -1978335189) {
+            Write-Host 'Chuyen sang bo cai Node.js LTS de cap nhat ban hien tai.'
+            & winget install @packageArgs --force | Out-Host
+            $result = $LASTEXITCODE
+        }
+    } else {
+        Write-Host "`n==> Chua co Node.js. Cai ban LTS (can >= 22; Windows co the hien hop thoai UAC)"
+        & winget install @packageArgs | Out-Host
+        $result = $LASTEXITCODE
+    }
+    if ($result -ne 0 -and $result -ne -1978335189) {
+        throw "Khong the cai/cap nhat Node.js (winget exit $result). Xem loi phia tren va log, kiem tra mang/quyen cai dat roi chay lai setup."
+    }
+
+    Update-SessionPath
+    # A portable Node or version manager can leave the old executable earlier in PATH.
+    # Prefer a verified new executable for this setup and every subsequent PATH refresh.
+    foreach ($candidate in @(Get-Command node -All -CommandType Application -ErrorAction SilentlyContinue)) {
+        if (Test-NodeVersion -NodeCommand $candidate.Source) {
+            $script:NodeDirectory = Split-Path -Parent $candidate.Source
+            Update-SessionPath
+            break
+        }
+    }
+    if (-not (Test-NodeVersion)) {
+        $version = Get-NodeVersion
+        $detected = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        $detectedPath = if ($detected) { $detected.Source } else { 'khong tim thay node' }
+        throw "Da thu cai/cap nhat nhung chua chay duoc Node.js >= 22 (hien tai: '$version', duong dan: '$detectedPath'). Xem log va kiem tra cau hinh PATH/trinh quan ly phien ban Node.js."
+    }
+    Write-Host "Node.js san sang: $(Get-NodeVersion)"
 }
 
 try {
@@ -65,8 +130,9 @@ try {
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw 'Khong tim thay winget. Cai "App Installer" tu Microsoft Store (https://aka.ms/getwinget) roi chay lai.'
     }
+    Ensure-NodeJs
     foreach ($command in $Packages.Keys) {
-        $present = if ($command -eq 'node') { Test-NodeVersion } else { [bool](Get-Command $command -ErrorAction SilentlyContinue) }
+        $present = [bool](Get-Command $command -ErrorAction SilentlyContinue)
         if ($present) { Write-Host "Da co: $command"; continue }
         $id = $Packages[$command]
         Write-Host "`n==> Cai $id (Windows co the hien hop thoai UAC)"
@@ -83,7 +149,7 @@ try {
             throw "Da cai nhung chua thay lenh $command trong PATH. Dong cua so nay, mo lai va chay lai setup-windows.cmd."
         }
     }
-    if (-not (Test-NodeVersion)) { throw 'Can Node.js 22 tro len. Go ban Node cu roi chay lai setup.' }
+    if (-not (Test-NodeVersion)) { throw 'Node.js trong PATH da thay doi. Can Node.js 22 tro len; xem log de kiem tra.' }
 
     # Console Windows mac dinh cp1252: script in tieng Viet can UTF-8 (ca khi Claude Code doc output qua pipe).
     [Environment]::SetEnvironmentVariable('PYTHONUTF8', '1', 'User')

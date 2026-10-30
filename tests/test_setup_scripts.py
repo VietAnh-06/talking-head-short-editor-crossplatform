@@ -40,28 +40,33 @@ if os.environ.get("MISSING_SFX") != "1":
         dispatcher = mocks / "dispatch"
         dispatcher.write_text('''#!/usr/bin/env python3
 import json, os, pathlib, sys
-tool = pathlib.Path(sys.argv[0]).name
-with open(os.environ['SETUP_TEST_LOG'], 'a') as log:
+tool = sys.argv.pop(1) if os.name == 'nt' else pathlib.Path(sys.argv[0]).name
+with open(os.environ['SETUP_TEST_LOG'], 'a', encoding='utf-8') as log:
     log.write(json.dumps([tool, *sys.argv[1:]]) + '\\n')
 if tool == 'npm' and os.environ.get('FAIL_NPM') == '1': sys.exit(23)
 if tool == 'npx' and os.environ.get('FAIL_TYPECHECK') == '1': sys.exit(24)
 if tool == 'uv' and sys.argv[1] == 'venv':
-    python = pathlib.Path(sys.argv[-1]) / 'bin/python'
+    python = pathlib.Path(sys.argv[-1]) / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
     python.parent.mkdir(parents=True)
     python.write_text('#!/bin/sh\\nexit 0\\n')
     python.chmod(0o755)
 ''')
         dispatcher.chmod(0o755)
         for name in ("npm", "npx", "uv", "ffmpeg", "ffprobe"):
-            (mocks / name).symlink_to(dispatcher)
+            if os.name == "nt":
+                (mocks / f"{name}.cmd").write_text(
+                    f'@echo off\n"{sys.executable}" -X utf8 "{dispatcher}" {name} %*\nexit /b %errorlevel%\n',
+                    encoding="utf-8")
+            else:
+                (mocks / name).symlink_to(dispatcher)
         self.log = self.base / "commands.jsonl"
-        self.env = {**os.environ, "PATH": f"{mocks}:{os.environ['PATH']}", "SETUP_TEST_LOG": str(self.log)}
+        self.env = {**os.environ, "PATH": f"{mocks}{os.pathsep}{os.environ['PATH']}", "SETUP_TEST_LOG": str(self.log)}
         self.project = self.base / "project tiếng Việt & 'quotes'"
 
     def run_setup(self, *args, **env):
         return subprocess.run(
             [sys.executable, str(self.skill / "scripts/new-project.py"), str(self.project), *args],
-            env={**self.env, **env}, capture_output=True, text=True,
+            env={**self.env, **env}, capture_output=True, encoding="utf-8",
         )
 
     def state(self):

@@ -7,12 +7,19 @@ Set up talking-head-short-editor natively on Windows (no WSL): Git, Node.js, FFm
 .EXAMPLE
 .\setup-windows.ps1 -ProjectName my-channel
 .EXAMPLE
+.\setup-windows.ps1 -ProjectDirectory 'D:\Video Projects\my-channel'
+.EXAMPLE
+.\setup-windows.ps1 -NonInteractive
+.EXAMPLE
 .\setup-windows.ps1 -SkipProject
 #>
 [CmdletBinding()]
 param(
     [ValidatePattern('^[a-z0-9][a-z0-9-]{0,63}$')]
     [string]$ProjectName = 'talking-head-shorts',
+    [ValidateScript({ -not [string]::IsNullOrWhiteSpace($_) })]
+    [string]$ProjectDirectory,
+    [switch]$NonInteractive,
     [switch]$SkipProject
 )
 
@@ -27,6 +34,50 @@ $Packages = [ordered]@{
     'ffmpeg' = 'Gyan.FFmpeg'
     'magick' = 'ImageMagick.ImageMagick'
     'uv'     = 'astral-sh.uv'
+}
+
+function Get-ProjectDirectory {
+    param([string]$Directory, [string]$Name, [switch]$SkipPrompt)
+    $defaultDirectory = Join-Path $HOME "videos\$Name"
+    if (-not $Directory) {
+        $Directory = $defaultDirectory
+        if (-not $SkipPrompt) {
+            Write-Host 'Chon thu muc project (co the dung o D, E hoac o khac).'
+            Write-Host 'Vi du: D:\Video Projects\kenh-cua-toi. Nhan Enter de dung mac dinh.'
+            $answer = Read-Host "Thu muc project [$defaultDirectory]"
+            if (-not [string]::IsNullOrWhiteSpace($answer)) {
+                $Directory = $answer.Trim().Trim('"')
+            }
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($Directory)) { throw 'Duong dan project khong duoc de trong.' }
+    $provider = $null
+    $drive = $null
+    $resolved = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath(
+        $Directory, [ref]$provider, [ref]$drive)
+    if ($provider.Name -ne 'FileSystem') { throw 'Hay chon duong dan thu muc tren o dia.' }
+    # PowerShell 5.1 passes a quoted path ending in backslash incorrectly to native programs.
+    if ($resolved -ne [IO.Path]::GetPathRoot($resolved)) {
+        $resolved = $resolved.TrimEnd([char[]]'\/')
+    }
+    return $resolved
+}
+
+function Assert-ProjectDirectoryAvailable {
+    param([string]$Directory)
+    if (-not (Test-Path -LiteralPath $Directory)) { return }
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) {
+        throw "Duong dan project la mot file: $Directory. Chon thu muc khac bang -ProjectDirectory."
+    }
+    $marker = Join-Path $Directory '.talking-head-setup'
+    if (Test-Path -LiteralPath $marker -PathType Leaf) {
+        $state = [IO.File]::ReadAllText($marker).Trim()
+        if ($state -notin @('installing', 'complete')) {
+            throw "Trang thai cai dat khong hop le: $marker. Chon thu muc project khac."
+        }
+    } elseif (Get-ChildItem -LiteralPath $Directory -Force | Select-Object -First 1) {
+        throw "Thu muc project da co du lieu: $Directory. Chon thu muc trong khac bang -ProjectDirectory."
+    }
 }
 
 function Update-SessionPath {
@@ -121,12 +172,15 @@ try {
             throw "Thieu $relative. Hay giai nen toan bo thu muc truoc khi chay setup."
         }
     }
+    $project = Get-ProjectDirectory -Directory $ProjectDirectory -Name $ProjectName -SkipPrompt:($NonInteractive -or $SkipProject)
+    if (-not $SkipProject) { Assert-ProjectDirectoryAvailable -Directory $project }
     $logDirectory = Join-Path $env:LOCALAPPDATA 'talking-head-short-editor/logs'
     New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
     $log = Join-Path $logDirectory ("setup-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
     Start-Transcript -Path $log | Out-Null
     $transcribing = $true
     Write-Host "Log: $log"
+    Write-Host "Thu muc project: $project"
 
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         throw 'Khong tim thay winget. Cai "App Installer" tu Microsoft Store (https://aka.ms/getwinget) roi chay lai.'
@@ -156,7 +210,7 @@ try {
     [Environment]::SetEnvironmentVariable('PYTHONUTF8', '1', 'User')
     $env:PYTHONUTF8 = '1'
 
-    $installArgs = @('run', (Join-Path $PSScriptRoot 'scripts/install.py'), '--project-name', $ProjectName)
+    $installArgs = @('run', (Join-Path $PSScriptRoot 'scripts/install.py'), '--project-name', $ProjectName, '--project-dir', $project)
     if ($SkipProject) { $installArgs += '--skip-project' }
     & uv @installArgs
     if ($LASTEXITCODE -ne 0) {
@@ -164,7 +218,6 @@ try {
     }
 
     $skill = Join-Path $HOME '.claude\skills\talking-head-short-editor'
-    $project = Join-Path $HOME "videos\$ProjectName"
     Write-Host ''
     Write-Host 'CAI DAT THANH CONG' -ForegroundColor Green
     Write-Host "Skill: $skill"

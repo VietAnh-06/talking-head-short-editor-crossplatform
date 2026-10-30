@@ -19,17 +19,23 @@ Yêu cầu chung: Node.js 22+, FFmpeg, ImageMagick 7 (`magick`), uv, Git, Intern
 
 Yêu cầu: Windows 11 hoặc Windows 10 21H2 trở lên, máy Intel/AMD 64-bit (chưa hỗ trợ Windows ARM), có `winget` (App Installer).
 
-1. Giải nén **toàn bộ thư mục**, rồi nhấp đúp **`setup-windows.cmd`**.
+1. Giải nén **toàn bộ thư mục**, rồi nhấp đúp **`setup-windows.cmd`**. Nhập thư mục project muốn cài, ví dụ `D:\Video Projects\kenh-cua-toi`; có thể chọn ổ D, E hoặc ổ khác. Nhấn Enter để dùng vị trí mặc định theo tên project.
 2. Bộ cài dùng `winget` để cài những gì còn thiếu: Git, Node.js LTS, FFmpeg, ImageMagick, uv. Với Node.js, bộ cài kiểm tra phiên bản trước: chưa có thì cài bản LTS, đã có từ 22 trở lên thì giữ nguyên, dưới 22 thì tự nâng cấp bằng `winget upgrade` (dùng bộ cài LTS nếu bản cũ không được nhận diện), rồi kiểm tra lại trước khi tiếp tục. Bạn không cần tự gỡ Node.js cũ. Windows có thể hiện hộp thoại quyền quản trị. Bộ cài đặt biến người dùng `PYTHONUTF8=1` để script in được tiếng Việt.
 3. Skill được chép vào `%USERPROFILE%\.claude\skills\talking-head-short-editor`. Bản cũ (nếu có) được chuyển vào `%USERPROFILE%\.local\share\talking-head-setup\backups\`.
-4. Project mặc định nằm ở `%USERPROFILE%\videos\talking-head-shorts`. Bộ cài chạy npm, tạo môi trường Whisper và VieNeu, sinh nhạc, tải SFX, kiểm TypeScript và thử mở trình duyệt render. **Whisper large-v3 (~3 GB) và model VieNeu chỉ tải khi dùng lần đầu.**
+4. Project nằm đúng tại thư mục đã chọn, mặc định là `%USERPROFILE%\videos\talking-head-shorts`. Bộ cài chạy npm, tạo môi trường Whisper và VieNeu, sinh nhạc, tải SFX, kiểm TypeScript và thử mở trình duyệt render. **Whisper large-v3 (~3 GB) và model VieNeu chỉ tải khi dùng lần đầu.**
 
-Chạy trong PowerShell nếu muốn chọn tên project, hoặc chỉ cài công cụ và skill:
+Chạy trong PowerShell để chỉ định đường dẫn trực tiếp, chọn tên mặc định, hoặc chỉ cài công cụ và skill:
 
 ```powershell
+.\setup-windows.cmd -ProjectDirectory "D:\Video Projects\kenh-cua-toi"
 .\setup-windows.cmd -ProjectName kenh-cua-toi
+.\setup-windows.cmd -NonInteractive -ProjectName kenh-cua-toi
 .\setup-windows.cmd -SkipProject
 ```
+
+`-ProjectDirectory` là **thư mục project cuối cùng**, không tự nối thêm tên project. Nếu truyền cả `-ProjectDirectory` và `-ProjectName`, đường dẫn được ưu tiên. Đường dẫn có khoảng trắng hoặc tiếng Việt được hỗ trợ; đặt trong ngoặc kép khi truyền tham số. `-NonInteractive` bỏ qua câu hỏi và dùng đường dẫn mặc định nếu không có `-ProjectDirectory`. `-SkipProject` cũng bỏ qua câu hỏi.
+
+`node_modules`, `.venv-align`, `.venv-vieneu`, nhạc, SFX, footage, model VieNeu và video xuất nằm trong project trên ổ đã chọn. Skill vẫn ở thư mục tài khoản để Claude Code nhận diện. **Lựa chọn này không chuyển vị trí công cụ do winget cài, Python do uv quản lý hay cache dùng chung của npm, uv và Whisper**; các phần đó vẫn có thể dùng ổ C theo cấu hình hệ thống. Bộ cài cũng không di chuyển project cũ sang vị trí mới.
 
 Sau khi cài, **mở cửa sổ terminal mới** để PATH có hiệu lực. Cài Claude Code cho Windows rồi đăng nhập; Claude Code đọc skill trong `%USERPROFILE%\.claude\skills` nên tự nhận skill. Mở Studio:
 
@@ -38,6 +44,8 @@ cd $HOME\videos\talking-head-shorts
 npm run studio
 ```
 
+Nếu chọn ổ D, thay dòng `cd` bằng đường dẫn thực tế, ví dụ `cd "D:\Video Projects\kenh-cua-toi"`. Tương tự, thay đường dẫn project trong lệnh tạo video dưới đây bằng thư mục đã chọn.
+
 Tạo video từ file trên ổ Windows (Claude Code chạy lệnh qua Git Bash; dùng dấu `/` và đặt đường dẫn có khoảng trắng trong ngoặc kép):
 
 ```bash
@@ -45,7 +53,7 @@ uv run ~/.claude/skills/talking-head-short-editor/scripts/new-video.py \
   ~/videos/talking-head-shorts "C:/Users/TenBan/Videos/clip.mp4" video-dau-tien
 ```
 
-Nếu cài lỗi, đọc thông báo ngay phía trên và log trong `%LOCALAPPDATA%\talking-head-short-editor\logs`, sửa nguyên nhân rồi chạy lại **với cùng tham số**. Project cài dở được tiếp tục; project đã cài xong được giữ lại; thư mục chứa dữ liệu khác bị từ chối, khi đó hãy chọn `-ProjectName` mới.
+Nếu cài lỗi, đọc thông báo ngay phía trên và log trong `%LOCALAPPDATA%\talking-head-short-editor\logs`, sửa nguyên nhân rồi chạy lại **với cùng đường dẫn project** (nhập lại khi được hỏi hoặc dùng `-ProjectDirectory`). Project cài dở được tiếp tục; project đã cài xong được giữ lại; thư mục chứa dữ liệu khác bị từ chối trước khi cài công cụ, khi đó hãy chọn thư mục trống khác.
 
 ## Cài tự động trên macOS
 
@@ -54,17 +62,20 @@ Yêu cầu: máy Mac Apple Silicon hoặc Intel đã cài [Homebrew](https://bre
 ```bash
 cd ~/Downloads/talking-head-short-editor-crossplatform   # thư mục đã giải nén
 bash setup-macos.sh                                      # hoặc: bash setup-macos.sh --project-name kenh-cua-toi
+bash setup-macos.sh --project-dir "/Volumes/Video SSD/kenh-cua-toi"
 bash setup-macos.sh --skip-project                       # chỉ cài công cụ và skill
 ```
 
 Bộ cài dùng `brew install` cho những gì còn thiếu (node, ffmpeg, imagemagick, uv, git). Node.js từ 22 trở lên được giữ nguyên; nếu chưa có thì cài, nếu dưới 22 thì nâng cấp bằng `brew upgrade node` khi Homebrew đã quản lý gói `node`, hoặc cài gói này khi bản cũ được cài theo cách khác. Bộ cài dùng Node.js vừa cài/nâng cấp trong phiên setup và kiểm tra lại phiên bản trước khi tiếp tục. Sau đó chép skill vào `~/.claude/skills/talking-head-short-editor`, rồi tạo project tại `~/videos/talking-head-shorts` giống như trên Windows. Log nằm ở `~/Library/Logs/talking-head-short-editor/`. Sau đó cài Claude Code và đăng nhập.
+
+Trên macOS, dùng `--project-dir` để chọn thư mục khác hoặc ổ ngoài; nếu không truyền thì dùng `~/videos/<tên>`. Tham số được chuyển nguyên vẹn tới bộ cài Python, không có câu hỏi chọn thư mục trên macOS.
 
 Nếu dùng trình quản lý phiên bản như nvm/fnm/Volta, cấu hình của trình quản lý đó có thể chọn lại Node.js cũ khi mở terminal mới; hãy chọn Node.js từ 22 trở lên trong trình quản lý đó trước khi chạy Studio.
 
 ## Cài thủ công (Linux hoặc khi không muốn dùng bộ cài)
 
 1. Cài Node 22+ và npm, FFmpeg (`ffmpeg`, `ffprobe`), uv, ImageMagick (`magick`; ImageMagick 6 vẫn chạy `mixkit-thumbs.py`) và Git.
-2. Từ thư mục đã giải nén: `uv run scripts/install.py [--project-name <tên>] [--skip-project]`. Hoặc chép thư mục vào `~/.claude/skills/talking-head-short-editor/` rồi để Claude Code tự chạy `uv run scripts/new-project.py <thư-mục>` khi dựng video đầu tiên. Nếu tạo project lỗi giữa chừng, chạy lại `uv run scripts/new-project.py <cùng-thư-mục> --resume`.
+2. Từ thư mục đã giải nén: `uv run scripts/install.py [--project-name <tên>] [--project-dir <thư-mục>] [--skip-project]`. Ví dụ chọn ổ khác trên Linux: `uv run scripts/install.py --project-dir "/mnt/video/kenh-cua-toi"`. Hoặc chép thư mục vào `~/.claude/skills/talking-head-short-editor/` rồi để Claude Code tự chạy `uv run scripts/new-project.py <thư-mục>` khi dựng video đầu tiên. Nếu tạo project lỗi giữa chừng, chạy lại `uv run scripts/new-project.py <cùng-thư-mục> --resume`.
 3. Mở Claude Code và nhờ nó dựng video, ví dụ "dựng video talking head từ file X" hoặc "làm video giọng đọc AI từ kịch bản này".
 4. Video có giọng máy: lần đầu, `tts-build.py` tải model VieNeu-TTS v3 Turbo từ Hugging Face.
 

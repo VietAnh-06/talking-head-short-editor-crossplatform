@@ -4,9 +4,9 @@
 # ///
 """Cài skill vào tài khoản hiện tại và tạo (hoặc tiếp tục) project dựng video, rồi kiểm môi trường.
 setup-windows.ps1 và setup-macos.sh gọi file này sau khi cài node, ffmpeg, ImageMagick, uv.
-Dùng: uv run scripts/install.py [--project-name <tên>] [--skip-project]
+Dùng: uv run scripts/install.py [--project-name <tên>] [--project-dir <thư-mục>] [--skip-project]
   Skill: ~/.claude/skills/talking-head-short-editor (bản cũ chuyển vào ~/.local/share/talking-head-setup/backups/)
-  Project: ~/videos/<tên> (mặc định talking-head-shorts)
+  Project: --project-dir hoặc ~/videos/<tên> (mặc định talking-head-shorts)
 """
 import argparse
 import datetime
@@ -31,6 +31,7 @@ def step(msg: str):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--project-name", default="talking-head-shorts")
+parser.add_argument("--project-dir", help="Đường dẫn đầy đủ tới thư mục project; ưu tiên hơn --project-name.")
 parser.add_argument("--skip-project", action="store_true")
 args = parser.parse_args()
 if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.project_name):
@@ -41,12 +42,25 @@ for item in ITEMS:
 
 home = Path.home()
 skill = home / ".claude/skills/talking-head-short-editor"
-project = home / "videos" / args.project_name
+if args.project_dir is not None and not args.project_dir.strip():
+    die("Đường dẫn project không được để trống.")
+try:
+    project = (Path(args.project_dir).expanduser() if args.project_dir is not None
+               else home / "videos" / args.project_name).resolve()
+except (OSError, RuntimeError, ValueError) as e:
+    die(f"Đường dẫn project không hợp lệ: {e}")
+skill_location = skill.resolve()
+if project.is_relative_to(skill_location) or skill_location.is_relative_to(project):
+    die(f"Thư mục project phải tách khỏi thư mục skill: {skill}. Chọn thư mục khác bằng --project-dir.")
 marker = project / ".talking-head-setup"
 # Từ chối project không liên quan trước khi chép hay tải gì.
-if not args.skip_project and project.exists() and not marker.is_file():
-    if not project.is_dir() or any(project.iterdir()):
-        die(f"Thư mục project đã có dữ liệu: {project}. Chọn tên khác bằng --project-name / -ProjectName.")
+if not args.skip_project and project.exists():
+    if not project.is_dir() or (any(project.iterdir()) and not marker.is_file()):
+        die(f"Thư mục project đã có dữ liệu: {project}. Chọn thư mục trống khác bằng --project-dir / -ProjectDirectory.")
+    if marker.is_file() and marker.read_text(encoding="utf-8").strip() not in ("installing", "complete"):
+        die(f"Trạng thái cài đặt không hợp lệ: {marker}. Chọn thư mục project khác.")
+
+print(f"Thư mục project: {project}", flush=True)
 
 step("Cài skill vào tài khoản hiện tại")
 if skill.resolve() == SOURCE:

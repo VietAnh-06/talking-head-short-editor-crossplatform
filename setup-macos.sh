@@ -1,7 +1,7 @@
 #!/bin/bash
 # Cài talking-head-short-editor trên macOS (Apple Silicon hoặc Intel) bằng Homebrew, rồi chạy scripts/install.py.
 # Dùng (trong Terminal, tại thư mục đã giải nén):
-#   bash setup-macos.sh [--project-name <tên>] [--skip-project]
+#   bash setup-macos.sh [--project-name <tên>] [--project-dir <thư-mục>] [--skip-project]
 # Viết cho bash 3.2 có sẵn trên macOS.
 set -euo pipefail
 cd "$(dirname "$0")"

@@ -1,3 +1,7 @@
+# Phạm vi áp dụng checklist
+
+Đối chiếu các mục phù hợp với brief hiện tại. Tên kênh, thị trường, giọng đọc và mốc “người dùng đã chốt” bên dưới là ví dụ lịch sử. Yêu cầu của phiên hiện tại có ưu tiên; có thể giữ cùng nhận diện qua `.style-policy.json` (`style-presets.md`). Nếu không có quyền/công cụ delegation, tự review bằng chứng và ghi rõ chưa có đánh giá độc lập.
+
 # Checklist yêu cầu video (kiểm trước khi báo xong)
 
 Mỗi dòng phải có bằng chứng: lệnh đã chạy, khung đã duyệt, hoặc câu người dùng đã xác nhận. Dòng nào chưa đạt mà vẫn giao thì ghi vào mục "chưa kiểm chứng" của báo cáo.

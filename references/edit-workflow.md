@@ -146,7 +146,7 @@ node <project>/scripts/qa-frames.mjs <Composition> out/qa/<slug> --every=15     
 node <project>/scripts/qa-frames.mjs <Composition> out/qa/<slug>-pick --frames=30,240,955 --variant=full --scale=0.4
 ```
 
-Bundle một lần, giữ một trình duyệt, nên nhanh hơn nhiều lần so với gọi `npx remotion still` từng khung. Bundle nằm ở `out/qa/.bundle` và `public/` được symlink, không chép: `/tmp` là tmpfs trong RAM (16 GB), mỗi bundle chép 13 GB `public/` sẽ lấp đầy nó. `bare` = `--props='{"qa":"bare"}'`: chỉ còn footage người nói và màu, khung B-roll ra đen.
+Bundle một lần, giữ một trình duyệt, nên nhanh hơn gọi `npx remotion still` từng khung. Mỗi lần có bundle riêng `out/qa/.bundle-*` và dọn khi kết thúc, kể cả lúc lỗi. macOS/Linux symlink `public/`; Windows chép thư mục nên cần đủ chỗ trống. Lấy mẫu mặc định gồm khung đầu và cuối, kể cả clip ngắn. `bare` = `--props='{"qa":"bare"}'`: chỉ còn footage người nói và màu, khung B-roll ra đen.
 
 ## 8. Render, master, kiểm tra
 
@@ -163,6 +163,6 @@ uv run --with numpy --with pillow python <project>/scripts/cut-strips.py <slug> 
 uv run -p 3.12 --with mediapipe --with pillow --with numpy python <project>/scripts/face-check.py out/qa/<slug>  # cần qa-frames trước
 ```
 
-`verify-final.py` in độ to cold open / thoại / màn kết và cảnh báo khi lệch. Rồi chạy critic theo `critic-review.md`.
+`verify-final.py` trả lỗi khi thiếu luồng âm/hình, sai 1080×1920/30 fps, khung đen, độ to ngoài −14 ± 1 LUFS hoặc true peak > −1 dBTP. Nó còn in độ to cold open / thoại / màn kết và lời Whisper để người dựng đối chiếu; exit 0 chưa chứng minh nội dung đúng. Rồi duyệt critic theo `critic-review.md` **trước khi** xuất bìa, mô tả và chạy `deliver.py`. Bản sửa dùng lại tên giao cũ.
 
-Render 70–90 s mất 4–9 phút (CPU 16 luồng). Chạy nền, nối `render && master && verify && cp` để một bước lỗi dừng cả chuỗi (render lỗi mà vẫn master thì `verify-final` báo đạt trên bản cũ). Máy đang bận (nhiều render/whisper cùng lúc) thì render hay lỗi `delayRender` timeout hoặc compositor bị SIGKILL do hết RAM: thêm `--concurrency=2 --timeout=240000 --offthreadvideo-cache-size-in-bytes=536870912`, và đừng chạy song song nhiều render. Câu "Cảm ơn các bạn đã theo dõi"/"Hãy đăng ký kênh" cuối bản whisper là bịa trên nhạc màn kết, không phải lỗi. Chữ nghe sai ở bản final mà bản ghép giọng nghe đúng: nghe riêng khúc 5–6 s quanh chỗ đó trước khi kết luận SFX che chữ (chép cả bài một lượt whisper hay lệch ngữ cảnh).
+Thời gian render tùy máy và tài sản. Trong Bash/PowerShell 7 có thể nối `render && master && verify`; PowerShell 5.1 cần kiểm tra `$LASTEXITCODE` sau từng lệnh. Dừng chuỗi khi lỗi để tránh kiểm nhầm master cũ; chỉ gọi `deliver.py` sau QA nội dung. Mỗi máy chạy một render, kể cả preflight âm (mix và stem chạy nối tiếp). Khi máy thiếu tài nguyên, thử `--concurrency=2 --timeout=240000 --offthreadvideo-cache-size-in-bytes=536870912`. Whisper có thể bịa câu trên nhạc màn kết: nghe riêng đoạn nghi ngờ trước khi quyết định sửa, không mặc định mọi câu kết đều là bịa.

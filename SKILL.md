@@ -1,118 +1,80 @@
 ---
 name: talking-head-short-editor
-description: "Edit real talking-head footage (one person speaking to camera, e.g. expert Q&A; multi-clip videos are concatenated) into a viral vertical short with Remotion: whisper-based cuts, cold open, comment-reply card, literal B-roll per spoken noun, transitions, word-highlight captions, Mixkit SFX with voice ducking, wind/rustle denoise, -14 LUFS master, and a new content-fitted style per video so videos do not look alike. Also builds faceless voice-over shorts from an approved script read by VieNeu-TTS (one take per line, extra takes only for lines whisper or the pitch check flags; the user listens before visuals are built) with full-frame B-roll, a bright cover at frame 0 and motion rules (staggered entrances, fast exits, idle breathing, rough-notation highlights). Use when the user gives a recorded clip or an approved voice-over script and asks to edit/build it professionally or make it viral (dựng/edit video quay, video talking head, video giọng đọc AI, short viral, Reels/TikTok). Not for pure motion-graphics videos without voice or footage (use remotion or hyperframes skills) or simple trims."
+description: "Dựng footage người nói trước camera hoặc kịch bản giọng đọc tiếng Việt đã duyệt thành video dọc TikTok/Reels bằng Remotion, với cắt lời, phụ đề, B-roll, đồ họa, âm thanh và kiểm tra thành phẩm. Dùng khi cần dựng short từ clip quay hoặc tạo bản giọng máy VieNeu-TTS; không dùng cho cắt đơn giản hay video thuần đồ họa không có lời."
 ---
 
 # Talking Head Short Editor
 
-Dựng clip người nói quay thật (dọc, một bối cảnh cố định) thành short 60–90 giây xem được không cần tiếng, đúng chuẩn kênh giáo dục viral, cho người làm nội dung/thương hiệu tiếng Việt. Chuẩn chất lượng: không có đoạn nào chỉ là cái đầu người nói, hình minh họa đúng từng câu, chữ rõ, SFX đa dạng không che giọng, và mỗi video mang một style khác video trước.
+Tạo video dọc 1080×1920, 30 fps từ lời nói thật hoặc kịch bản đã duyệt. Ưu tiên giữ đúng nghĩa, giọng rõ, phụ đề đọc được và hình minh họa đúng nội dung. Mặc định hướng tới short 60–90 giây có phong cách riêng; thời lượng, nhận diện kênh, thị trường và cách dựng theo brief hiện tại.
 
-## Khi dùng
+## Môi trường và đường dẫn
 
-- Người dùng đưa file quay (một người nói, phỏng vấn, hỏi–đáp, chia sẻ) và muốn dựng chuyên nghiệp/viral, thêm minh họa, phụ đề, hiệu ứng.
-- Người dùng muốn dựng tiếp một loạt video cùng kênh nhưng không trùng màu sắc.
-- Một video quay thành nhiều file (nhiều cảnh, nhiều lần bấm máy): ghép thành một nguồn rồi dựng như một clip.
-- Thêm một phiên bản đọc bằng giọng máy (VieNeu-TTS, giọng Bắc/Nam/Trung dựng sẵn) của video đã dựng, hoặc dựng thẳng video giọng đọc từ một kịch bản đã duyệt (không có người nói, B-roll phủ kín): theo `references/tts-voice-version.md`.
-- Không dùng cho: video thuần đồ họa/hoạt hình không có giọng đọc hay footage (skill remotion/hyperframes), cắt ghép đơn giản, vlog nhiều cảnh quay (cần dựng theo cảnh, không theo lời).
+- `scripts/new-project.py`, `new-video.py`, `concat-footage.py`, `sync-template.py` nằm trong **thư mục skill**. Các script dựng/QA còn lại nằm trong **project** được tạo từ `assets/template/`.
+- Chạy Python qua `uv run <đường-dẫn-script> …`; dùng `uv run -p .venv-align python -X utf8 …` cho môi trường Whisper. Không chạy shebang trực tiếp trên Windows.
+- Dùng shell thực tế của phiên làm việc. Ví dụ Bash có `&&` và dấu nối dòng `\`; PowerShell 5.1 cần kiểm tra `$LASTEXITCODE` sau mỗi lệnh. Đặt đường dẫn có khoảng trắng trong ngoặc kép.
+- Tạo project cần Node.js 22+, npm, FFmpeg/ffprobe, uv, ImageMagick và mạng. Model Whisper/VieNeu tải khi sử dụng lần đầu, không phải khi chỉ kiểm tra mã.
+- Dùng lại project hiện có. Trước khi đổi code chung trong project không có Git, lưu bản code bị tác động; không sao chép toàn bộ footage.
 
-## Cách làm
+## Luồng dựng
 
-Thứ tự dưới đây là bắt buộc vì bước sau dùng kết quả bước trước. Chi tiết lệnh và cấu hình: `references/edit-workflow.md`.
+Đọc [edit-workflow.md](references/edit-workflow.md) cho lệnh và cấu hình, rồi chọn đúng nhánh đầu vào.
 
-Đọc mục **Checklist yêu cầu video** bên dưới trước khi bắt đầu (ô đầu tiên: phong cách mới), đối chiếu từng ô trước khi báo xong.
+### 1. Chuẩn bị đầu vào
 
-Lệnh `./scripts/…` chạy trong thư mục project; `new-project.py`, `new-video.py`, `concat-footage.py` và `sync-template.py` nằm trong `scripts/` của skill. Skill chạy được trên Windows, macOS và Linux: script Python chạy qua `uv run scripts/<tên>.py` (không gọi `./scripts/x.py` trực tiếp, Windows không đọc shebang), Python trong venv gọi bằng `uv run -p .venv-align python …` (uv tự tìm `Scripts\python.exe` trên Windows). Trên Windows, Claude Code chạy lệnh qua Git Bash, nên các lệnh dưới đây giữ nguyên cú pháp; đường dẫn Windows viết dạng `C:/Users/...`. Project dựng thường không phải repo git (footage hàng GB) nên không tạo được worktree: làm thẳng trong project và chép lưu file `src/talking/` trước khi sửa code dùng chung.
+**Clip quay:**
 
-1. **Project.** Chưa có thì `uv run scripts/new-project.py <thư-mục>` (cần node, ffmpeg, uv, ImageMagick, mạng; lần đầu tải model whisper large-v3). Có rồi thì dùng lại.
-2. **Khởi tạo video.** Nhiều file quay của một video thì ghép trước: `uv run scripts/concat-footage.py <nguồn.mov> <file1> <file2>...` (theo thứ tự cảnh, tự xoay theo cờ rotation, in ranh giới cảnh). Rồi `uv run scripts/new-video.py <project> <file-quay> <slug> [style]`. Style truyền vào chỉ là chỗ tạm: bước 7 tạo style mới cho video.
-3. **Âm thanh giọng.** `measure-voice-noise.py <slug>`; nền thấp hơn giọng < 10 dB (quay ngoài trời, gió, lá) thì `denoise-voice.py <slug> <nguồn>` và gửi người dùng file A/B 6 s nghe trước. Làm trước EDL vì đổi track giọng làm đổi toàn bộ điểm cắt (`references/voice-audio.md`).
-4. **Phân tích.** Xem khung trích của **từng cảnh** (máy quay chĩa nhầm chỗ, chỉ có tiếng: đoạn đó phải phủ kín B-roll/đồ họa) và bản chép lời (bỏ tiếng đếm "1, 2, 3, máy chạy" giữa cảnh); xác định thể loại, câu đắt nhất cho cold open, đoạn câu hỏi, các ý, chỗ vấp/lặp (`references/viral-editing-playbook.md`). Trình bày ngắn phân tích này cho người dùng. Mọi ảnh ghép để xem (khung trích, thumbnail, still) thu về khoảng 400 KB trước khi đọc (`magick … -resize 1100x -quality 55`), vì ảnh lớn hơn bị chặn đọc và phải làm lại.
-5. **EDL.** Sửa `./scripts/edits/<slug>.json`, dựng lại, nghe bản ghép bằng `verify-edit-voice.py` cho đến khi sạch chữ thừa/thiếu, rồi chạy `find-voice-leaks.py --write` để bỏ tiếng đệm/chữ lặp ("ừm", "em, em") mà whisper chép thường bỏ qua, và `check-cut-edges.py` để chắc không mép nào cắt giữa âm tiết hay phát lại một khúc.
-6. **Phụ đề.** `caption-talking-edit.py`; sửa chính tả, cụm từ khóa trong cấu hình. Video giọng máy: đặt `captions.script` để chữ lấy từ kịch bản (`show`), whisper chỉ cho mốc.
-7. **Style + B-roll + âm thanh.** Code style mới và đồ họa đặc trưng giao cho sub-agent `sonnet` chạy song song (người dùng chốt 22/10/2026, `references/graphics-delegate.md`): model chính chốt hợp đồng thiết kế `out/qa/<slug>-design.md` (ẩn dụ, bảng màu, font, hằng số bố cục, nội dung từng đồ họa), export hằng số bố cục và tên kiểu trước, rồi gọi cùng lúc agent A (style) và agent B (`overlays.tsx`) cùng với lúc đọc giọng và agent dò B-roll; model chính ráp và duyệt. Tạo style mới hợp nội dung (bảng màu, font có subset tiếng Việt, kiểu B-roll/chuyển cảnh/tiêu đề, nhạc) theo `references/style-presets.md`, đăng ký trong registry và `.style-ledger`, rồi chạy `uv run --with numpy python ./scripts/check-style-novelty.py <slug>` cho tới khi `ĐẠT` (cổng: style chưa video nào dùng, khác video trước ≥ 4 trục, có ít nhất một kiểu hình mới). Dò/xem/tải cảnh Mixkit theo từng danh từ; khai báo `BEATS` với nhãn, `hit`, `amb` (`references/broll-and-sound.md`).
-8. **Bìa + đồ họa + tiêu đề + logo.** (Code bìa của bố cục mới do agent A viết, code đồ họa đặc trưng do agent B viết; model chính nối `Headline`/đồ họa vào file video và duyệt still.) Khung bìa ở khung 0 (`cover` của `TalkingShort`: giấy sáng, tiêu đề hook cỡ lớn) để video không "đen đầu", cộng poster ảnh đại diện thiết kế riêng (`CoverPoster`, không cắt từ video); tiêu đề hai tầng mỗi ý; một đồ họa đặc trưng hợp nội dung (level, checklist, thước đo, dòng thời gian...); thẻ bình luận và màn kết kéo bình luận. Mọi chuyển động theo `references/motion-design.md` (helper `src/talking/motion.tsx`: vào 2–3 thuộc tính, lệch nhịp, ra nhanh hơn vào, thở khi chờ, số đếm lò xo, nét dạ quang/khoanh vẽ tay bằng rough-notation, không emoji làm icon). Logo thương hiệu/đối tác (người dùng cung cấp hoặc SVG chính thức từ website của họ) đặt trên nền sáng, không che mặt.
-9. **Duyệt ảnh** 8–12 khung (gồm một khung đang chuyển cảnh); `node ./scripts/qa-frames.mjs` render hàng loạt still nhanh bằng `remotion still`, sửa bố cục, rồi mới render.
-9a. **Video giọng máy: người dùng nghe giọng trước khi dựng hình.** `uv run ./scripts/tts-build.py` xong thì gửi file `du-lieu/video-xuat/nghe-thu-giong/<slug>-giong.mp3` kèm bảng mốc câu và chờ trả lời trước khi chép lời/dựng timeline (người dùng 22/10/2026: whisper chỉ bắt lơ lớ khi nó làm lệch chữ; lỗi giọng lộ ra sau render là nguyên nhân chính của nhiều vòng sửa). Trong lúc chờ chỉ làm việc không phụ thuộc thời gian giọng.
-9b. **Kiểm âm trước khi render hình** (người dùng 22/10/2026: tránh sửa đi sửa lại): `uv run ./scripts/preflight-audio.py <Id> <slug>` render bản trộn và stem SFX chỉ âm thanh (song song, không vẽ khung; đừng chạy lúc máy đang render video khác, vì hai lệnh render cùng lúc từng treo hàng giờ) rồi `audio-layers.py` in từng chữ whisper nghe sai kèm lớp gây ra (GIỌNG / SFX / NHẠC) và các SFX dài hơn 1,5 s. Chỉ sửa lỗi lớp SFX; lớp GIỌNG thì nghe lại câu (chọn lần đọc khác), lớp NHẠC/GIỌNG mà giọng riêng nghe đúng thì ghi giây cho người dùng nghe, không render lại vì nó. Gộp mọi lỗi critic/still/âm thành **một** lượt sửa rồi mới render.
-10. **Render → master → kiểm tra → giao** (chỉ khi `check-style-novelty.py` đã `ĐẠT`; `master-loudness.py`, `verify-final.py` gồm độ to từng đoạn; âm thanh giống bản trộn `out/qa/<slug>-mix.wav` của bước 9b (`audio-same.py`, lệch ≤ 2 dB) thì không chạy whisper lại, `--full` để ép, rồi `uv run scripts/deliver.py <slug> [video-NNN-<slug>]`). Trước khi giao, xuất bìa `npx remotion still src/index.ts <Id>Poster out/final/<slug>-cover.jpg` và viết mô tả TikTok `out/final/<slug>-caption.txt` (người dùng 23/10/2026: mỗi video có file mô tả kèm theo): 1–2 câu trả lời đúng câu hook, 1 dòng nguồn ngắn, 3–5 hashtag, không viết đoạn dài, không thêm số lời không nói; `deliver.py` chuyển thành `du-lieu/video-xuat/<tên-giao>.txt` và cảnh báo khi thiếu bìa hoặc mô tả (chạy lại sau khi bổ sung thì chỉ chép phần thiếu). Chạy nền vì mất vài phút; nối các lệnh bằng `&&` để render lỗi không bị master lại bản cũ. **Mỗi video chỉ một file thành phẩm** (người dùng 22/10/2026): `deliver.py` chuyển `out/final/<slug>.mp4` sang `du-lieu/video-xuat/`, ghi đè bản trước, kèm bìa, xoá render thô; không tạo `-v2`, `-r1`, `box-<ip>/` hay bản chép thứ hai. Dừng một render đang chạy bằng `pkill -f '[r]emotion render.*<Id>'` (macOS/Linux): ngoặc vuông giữ cho mẫu không khớp chính dòng lệnh shell chứa nó (khớp thì shell tự bị giết, exit 144, và render vẫn chạy). Windows không có `pkill`: tìm PID bằng `powershell -NoProfile -c "Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | ? CommandLine -match 'remotion render.*<Id>' | select ProcessId"` rồi `taskkill //PID <pid> //T //F`.
-11. **QA bản final + critic.** `cut-strips.py <slug>` (hình + sóng âm ±1,5 s mọi điểm cắt, tự đánh dấu khung đen/bụp), `qa-frames.mjs … --every=15` + `face-check.py` (đồ họa che mặt), rồi giao bằng chứng cho critic sub-agent chỉ tìm lỗi; sửa lỗi CHẶN, tối đa 3 lượt; chọn giữa hai cách sửa bằng so cặp hai chiều (`references/critic-review.md`).
-12. **Đưa bản sửa chung về template.** Lỗi sửa trong code khung (`src/talking`, `src/components`, `./scripts`) là lỗi của mọi video sau: chạy `uv run scripts/sync-template.py <project>` để thấy file lệch, `--pull <file...>` các file đã sửa, rồi typecheck template. Không làm thì project mới tạo từ skill mang lại lỗi cũ.
-### Chạy song song
+1. Nếu chưa có project: `uv run <skill>/scripts/new-project.py <project>`.
+2. Nhiều clip của cùng video: xác nhận thứ tự từ brief/tên cảnh, chạy `concat-footage.py <nguồn.mov> <file1> <file2> …`. Xem khung của từng cảnh để nhận ra đoạn chỉ có tiếng hoặc quay nhầm.
+3. Chạy `new-video.py <project> <file-quay> <slug> [style]`. Khung EDL/style ban đầu là bản nháp.
+4. Đọc transcript, xác định hook, các ý, lời vấp/lặp; báo ngắn phương án dựng. Đo ồn trước khi sửa EDL; khi cần khử ồn, tạo mẫu A/B để đánh giá chất lượng giọng theo [voice-audio.md](references/voice-audio.md).
 
-Ngay sau khi lời được duyệt, chạy cùng lúc bốn việc: đọc giọng (`tts-build.py`, chạy nền), sub-agent dò B-roll, agent A `sonnet` viết style, agent B `sonnet` viết đồ họa đặc trưng (`references/graphics-delegate.md`). Mỗi agent giữ file riêng; file video `<slug>-short.tsx`, registry và `.style-ledger` thuộc model chính. Khi chờ render, chạy critic trên bằng chứng QA của still đã có, đừng đợi.
+**Kịch bản giọng máy:**
 
-Render bản cuối tại máy theo `references/edit-workflow.md` (mục render): `npx remotion render … && master-loudness.py && verify-final.py`, rồi `deliver.py`. Mỗi lúc chỉ chạy **một** render (cả `preflight-audio.py`): hai render cùng lúc trên một máy dễ treo hoặc hết RAM. Nhiều agent dựng song song thì để model chính chạy render nối tiếp trong một lệnh (`render a && render b`); `flock` không có trên macOS/Windows.
+1. Theo [tts-voice-version.md](references/tts-voice-version.md). Dùng nội dung đã được người dùng duyệt; hỏi phần còn thiếu ảnh hưởng trực tiếp đến lời đọc.
+2. Chọn giọng theo brief; các tên kênh/giọng trong ví dụ cũ chỉ là ví dụ. Tạo thử từ khó trong ngữ cảnh trước khi tạo cả bài.
+3. Tạo giọng bằng `tts-build.py`; đối chiếu script và cung cấp MP3 nghe thử cùng mốc câu **trước khi dựng EDL, phụ đề hay hình theo thời gian giọng**. Nếu người dùng đã duyệt giọng cụ thể hoặc đã giao quyền tự quyết trong phiên hiện tại, dùng phạm vi đó; không hỏi lại cùng một phê duyệt.
+4. Trong khi chờ phản hồi cần thiết, có thể chuẩn bị thiết kế hoặc tìm tài sản không phụ thuộc timing. Không coi im lặng là duyệt.
 
-### Đa dạng
+### 2. Chốt lời và thời gian
 
-Mỗi video tạo **một style mới** hợp nội dung của nó (người dùng đã chốt: không chỉ xoay vòng style có sẵn), cộng thêm ít nhất 3 trục khác (hook, đồ họa đặc trưng, nhịp B-roll, câu kéo bình luận, bộ SFX). Danh mục style, cách chọn theo nội dung và cách thêm style: `references/style-presets.md`.
+- Sửa `scripts/edits/<slug>.json`, chạy `build-talking-edit.py` rồi `verify-edit-voice.py`. `find-voice-leaks.py` và `check-cut-edges.py` giúp phát hiện âm thừa/mép cắt; nghe đoạn nghi ngờ trước khi áp dụng tự động `--write`.
+- Tạo phụ đề bằng `caption-talking-edit.py`, sửa chính tả và cụm từ; với TTS dùng `captions.script` để chữ lấy từ kịch bản. Đổi track giọng hoặc EDL thì cập nhật các kết quả phụ thuộc, không giữ timing cũ.
+- Dùng [viral-editing-playbook.md](references/viral-editing-playbook.md) để chọn hook/nhịp phù hợp, không ghép lời thành nghĩa khác.
 
-### Ràng buộc
+### 3. Thiết kế hình và âm thanh
 
-- Không bịa thông tin: tên, chức danh, số liệu, lời hứa chỉ lấy từ lời người nói hoặc người dùng cung cấp. Đồ họa không ghi con số người nói không nói.
-- Giữ nguyên nghĩa lời người nói; được cắt, không được ghép thành câu mang nghĩa khác. Câu nói nhịu làm ngược nghĩa thì bỏ.
-- Khóa API (Pexels, Gemini...) chỉ đọc từ môi trường lúc chạy, không ghi vào file, không in ra.
-- Chỉ dùng nguồn hình/âm có giấy phép thương mại (Mixkit Free, tài sản người dùng cung cấp, âm tổng hợp). Không dùng ảnh CC-BY-SA cho video quảng cáo.
-- Mỗi video chỉ một file thành phẩm trong `du-lieu/video-xuat/`; bản sửa ghi đè file đó qua `deliver.py` và báo người dùng là đã thay. Video đã đăng thì không dựng lại.
+- Chọn ẩn dụ, màu, font hỗ trợ tiếng Việt, bố cục và nội dung đồ họa trước khi viết code. Hướng dẫn: [style-presets.md](references/style-presets.md), [motion-design.md](references/motion-design.md).
+- Mặc định tạo style hợp riêng video và chạy `check-style-novelty.py <slug>` trước render. Nếu brief yêu cầu giữ cùng nhận diện, dùng chính sách được mô tả trong tài liệu style; không tự ép người dùng đổi thương hiệu.
+- Tìm, xem rồi tải B-roll đúng lời; lựa chọn người/bối cảnh theo brief hiện tại. Kiểm tra giấy phép từng tài sản cho mục đích dùng; ghi nguồn. Dùng [broll-and-sound.md](references/broll-and-sound.md) cho Mixkit, gắn nhãn, SFX, ducking và nhạc.
+- Tạo bìa sáng ở khung đầu, poster riêng, tiêu đề và đồ họa có ích. Dùng logo người dùng cung cấp hoặc nguồn chính thức, không tự bịa thông tin thương hiệu.
+- Có thể chia phần độc lập khi delegation được phép và công cụ sẵn có: [graphics-delegate.md](references/graphics-delegate.md). Nếu không, thực hiện tuần tự với cùng hợp đồng thiết kế; không phụ thuộc một tên model hoặc công cụ của ứng dụng khác.
 
-### Checklist yêu cầu video (bắt buộc, đối chiếu từng ô trước khi báo xong)
+### 4. Kiểm trước render
 
-Ô nào chưa đạt mà vẫn giao thì ghi vào "điểm chưa kiểm chứng" của báo cáo. Cách kiểm chi tiết từng ô: `references/video-checklist.md`.
+- Đọc [video-checklist.md](references/video-checklist.md), áp dụng các mục phù hợp với brief; ví dụ thị trường/kênh cũ không tự trở thành yêu cầu hiện tại.
+- `qa-frames.mjs` lấy 8–12 still gồm bìa, B-roll, tiêu đề, màn kết và ít nhất một khung đang chuyển cảnh. Xem ảnh thực tế, kiểm chữ và vùng mặt/phụ đề; ảnh ghép quá lớn thì thu nhỏ để đọc được.
+- Chạy `preflight-audio.py <Id> <slug>` rồi đối chiếu kết quả `audio-layers.py`. Nghe đoạn nghi ngờ để phân biệt lỗi giọng, SFX hay nhạc; transcript tự động không chứng minh phát âm đúng.
+- Mỗi máy chỉ chạy **một render tại một thời điểm**, kể cả render âm. Gộp lỗi đã xác nhận vào một lượt sửa rồi kiểm lại phần bị ảnh hưởng.
 
-**A. Phong cách mới (người dùng đã chốt: mỗi video một phong cách khác)**
-- [ ] Style viết mới cho chính video này, hợp nội dung (có ẩn dụ hình ảnh từ chủ đề); style `new-video.py` gán lúc đầu chỉ là tạm.
-- [ ] `uv run --with numpy python ./scripts/check-style-novelty.py <slug>` in `ĐẠT` **trước khi render**: style chưa video nào dùng, khác video trước ≥ 4/7 trục, có ít nhất một kiểu B-roll/chuyển cảnh/tiêu đề mới, **bộ khung (nền + chỗ đặt hình) khác video liền trước** và không dùng lại clip của video liền trước (`style-presets.md`, mục "Bộ khung"). Đặt still của video mới cạnh still video trước: nhìn lướt vẫn thấy cùng khuôn thì chưa đạt.
-- [ ] Khác video trước thêm ≥ 3 trục: hook, đồ họa đặc trưng, nhịp B-roll, câu kéo bình luận, bộ SFX.
+### 5. Render, QA final rồi giao
 
-**B. Nội dung**
-- [ ] Không bịa tên/số liệu/lời hứa; tên riêng theo tài liệu người dùng; giữ nghĩa câu, câu nói hai lần dùng lần trọn vẹn.
-- [ ] Cold open là câu đắt nhất; đã bỏ lời chào, tiếng đếm "1, 2, 3, máy chạy", câu vấp; màn kết có câu kéo bình luận.
+1. Render bằng Remotion, chỉ master khi render thành công; chỉ kiểm final khi master thành công. Lệnh cụ thể ở `edit-workflow.md`.
+2. Chạy `verify-final.py out/final/<slug>.mp4`: lỗi kích thước/fps, thiếu âm/hình, khung đen, độ to ngoài −14 ± 1 LUFS hoặc true peak > −1 dBTP trả mã lỗi. Exit 0 là đạt cổng kỹ thuật; vẫn cần đọc/nghe nội dung. `--full` buộc Whisper nghe lại thay vì dùng so âm preflight.
+3. Chạy `cut-strips.py`, still final và `face-check.py` khi có người nói. Duyệt bằng chứng theo [critic-review.md](references/critic-review.md); dùng người đánh giá riêng khi sẵn có/được phép, hoặc tự làm một lượt review chỉ tìm lỗi. **Hoàn tất QA trước khi giao.**
+4. Xuất poster `out/final/<slug>-cover.jpg` và mô tả `out/final/<slug>-caption.txt` bám sát lời nói; chạy `deliver.py <slug> [tên-giao]` (ví dụ `video-NNN-<slug>`, tên không có đuôi file). Dùng lại tên giao cũ khi sửa; script ghi nhớ tên tùy chọn trong `.deliveries.json`, từ chối đường dẫn và đổi tên tạo bản thứ hai.
+5. Báo đường dẫn thành phẩm và bằng chứng kiểm tra, phân biệt rõ mục chưa kiểm chứng. Không tự đăng lên mạng hoặc dựng lại video đã đăng nếu không có yêu cầu.
 
-**C. Âm thanh**
-- [ ] `measure-voice-noise.py` chênh giọng−nền ≥ 10 dB, hoặc đã `denoise-voice.py` và người dùng nghe A/B xác nhận.
-- [ ] `find-voice-leaks.py` hết "BỎ ĐƯỢC" (cửa sổ "không kiểm được" đã nghe bằng `listen-edit.py`); `check-cut-edges.py` không còn đoạn chồng nhau, mép "giữa âm tiết" đã nghe.
-- [ ] Giọng máy (VieNeu): đã phiên âm các từ cần phiên âm (từ nước ngoài, chữ viết tắt và mã, số và ký hiệu; điều kiện ở `references/tts-voice-version.md`, mục "Kịch bản") và chốt từ mới bằng file thử (4–6 cách viết, có cách để nguyên chữ gốc, đọc ở temperature 0,1 trong đúng câu của bài, người dùng nghe tai chọn; không tin whisper). Lấy mẫu mặc định 0,1 + top_k 10. Không lọc micro, không rút khoảng nghỉ, không tăng tốc, không chọn theo ngữ điệu (scripts tự làm khi có `out/tts/<slug>-voice.wav`). Giọng kênh Linh: Đoan Trang.
-- [ ] `preflight-audio.py` đã chạy trước render hình: không còn chữ sai lớp SFX; chữ sai lớp GIỌNG/NHẠC đã ghi giây vào báo cáo.
-- [ ] SFX đa dạng, `align` mặc định `start` (canh onset/peak đã thử, gây che chữ), không che chữ, một câu tối đa 2 hit, `check-style-novelty.py` không cảnh báo SFX lặp > 2; chữ nghe sai đã khoanh vùng theo lớp (giọng ghép → stem SFX → trước master), không đoán.
+## Sửa và kiểm tra lại
 
-**D. Hình**
-- [ ] Khung B-roll ≥ 45 % khung hình (cổng `check-style-novelty.py` chặn); ưu tiên clip dọc (`vertical-<từ khóa>`), clip 16:9 cắt sát chủ thể bằng `focusX` (người dùng chê hình minh họa nhỏ 22/10/2026).
-- [ ] Không vẽ thanh tiến trình (timeline) chạy theo thời gian video: TikTok/Reels đã có thanh riêng (người dùng bỏ 22/10/2026).
-- [ ] Không đoạn nào chỉ có đầu người nói; cảnh quay nhầm (chỉ có tiếng) phủ kín B-roll/đồ họa; B-roll đúng nghĩa đen, nhãn đúng cái đang thấy.
-- [ ] Người trong B-roll hợp thị trường (kênh Việt/Hàn: người châu Á; không có thì tay/đồ vật/phố, không mặt người phương Tây); mọi clip đã gắn nhãn trong `public/broll/people-tags.jsonl` (`references/broll-and-sound.md`).
-- [ ] Đã duyệt 8–12 still (có một khung đang chuyển cảnh): không chữ mồ côi, phụ đề trong vùng an toàn; nền màn kết có người nói.
-- [ ] `face-check.py` không còn khung CHE MẶT; `cut-strips.py` không còn KHUNG ĐEN/BỤP và các tờ dải cắt đã đọc (nhảy hình, lớp phủ kẹt).
-- [ ] Critic sub-agent đã chạy trên bằng chứng QA; không còn lỗi CHẶN (`references/critic-review.md`).
+Mỗi vòng ghi lỗi, bằng chứng, mức độ và kết quả sửa. Chạy kiểm tra phù hợp sau thay đổi; chỉ render lại khi thay đổi tác động thành phẩm. Dừng khi không còn lỗi chặn và tiêu chí brief đạt. Mặc định sau 3 vòng tốn render mà vẫn không tiến triển, báo nguyên nhân và phần cần quyết định; yêu cầu lặp/giới hạn cụ thể của người dùng hiện tại có ưu tiên.
 
-**D2. Chuyển động và bìa** (`references/motion-design.md`)
-- [ ] Khung 0 là bìa sáng, tiêu đề hook đọc được trong vùng an toàn; poster bìa thiết kế riêng (`CoverPoster`, Still `<Id>Poster`) đã xuất `out/final/<slug>-cover.jpg` và đọc bản cắt 3:4; still khung 14 (bìa đang thu) không lộ khung đen.
-- [ ] Không chuyển động tuyến tính (trừ kim đồng hồ), mọi `interpolate` có clamp; vào 2–3 thuộc tính, lệch nhịp; ra nhanh hơn vào; đồ họa đứng > 2 s có `breathe`.
-- [ ] Một điểm nhấn màu mỗi khung; nét dạ quang/khoanh dùng `MarkerHighlight`/`MarkerCircle`, ≤ 2 nét mỗi đồ họa; không emoji làm icon; Lottie (nếu có) đã kiểm giấy phép từng file.
+Lỗi chung sửa trong project phải được đưa lại template bằng `sync-template.py <project> --pull <file…>` và typecheck template. Script chỉ chép code chung; thay `package.json` phải kèm lockfile. Không kéo registry, EDL, footage hay dữ liệu riêng vào skill.
 
-**E. Thương hiệu**
-- [ ] Logo thương hiệu (và đối tác nếu được nhắc tên) ở hook/CTA, trên đồ họa có tên, ở màn kết; nền sáng; nguồn logo rõ ràng.
+Trong project dựng, chạy `npm run typecheck` sau thay đổi TypeScript. Các test dành cho repository mã nguồn được hướng dẫn trong `README-CAI-DAT.md`; không cần chúng khi chỉ dùng bản skill đã cài. Chẩn đoán lỗi dựng cụ thể: [pitfalls.md](references/pitfalls.md).
 
-**F. Giao hàng**
-- [ ] `verify-final.py`: 1080×1920@30, −14 LUFS, độ to từng đoạn không cảnh báo (màn kết lệch thoại ≤ 8 LU, cold open không nhỏ hơn thoại > 3 LU), không khung đen, whisper nghe đủ lời đúng thứ tự (ngoài câu bịa trên nhạc màn kết); render mới thật (so mtime), chuỗi lệnh nối `&&`.
-- [ ] `uv run scripts/sync-template.py <project>` không còn file "project mới hơn" do bản sửa chung của lần dựng này.
-- [ ] Mỗi video đúng một file trong `du-lieu/video-xuat/` (đã chạy `deliver.py`, `out/final` không còn bản của slug); báo cáo gồm thể loại và hướng dựng, style mới và vì sao hợp nội dung, những gì đã cắt, nguồn hình/âm/logo và giấy phép, điểm chưa kiểm chứng, câu hỏi còn mở. Lỗi đã gặp: `references/pitfalls.md`.
+## Ràng buộc nội dung
 
-## Tài nguyên
-
-- `references/video-checklist.md`: checklist yêu cầu video, mỗi dòng kèm cách kiểm.
-- `references/graphics-delegate.md`: hợp đồng thiết kế, brief agent A (style) và agent B (đồ họa đặc trưng) chạy `sonnet` song song, phân quyền file.
-- `references/motion-design.md`: luật chuyển động (rút từ remotion-dev/skills, haidrrrry/claude-remotion-skill, article-highlights), khung bìa, nét vẽ tay rough-notation, Lottie, thẻ bài báo cho video tin tức, cách kiểm.
-- `references/tts-voice-version.md`: video giọng VieNeu (giấy phép, chọn giọng, cách viết chữ cho máy đọc, đọc 1 lần, chỉ đọc thêm câu sai chữ hoặc lên giọng sai bằng `tts-build.py` (`tts-takes.py` + `tts-pick.py`), người dùng nghe giọng trước khi dựng, file video không cảnh người nói).
-- `references/critic-review.md`: chuẩn bị bằng chứng QA, prompt critic sub-agent, xử lý kết quả, so cặp hai chiều.
-- `references/edit-workflow.md`: lệnh từng bước, cấu trúc `./scripts/edits/<slug>.json`, `BEATS`, `Headline`, duyệt và render.
-- `references/viral-editing-playbook.md`: nhận diện thể loại, cấu trúc thời gian, quy tắc cắt/hình/chữ/âm, phản hồi người dùng đã chốt.
-- `references/style-presets.md`: style có sẵn, cách tạo style mới cho mỗi video, các trục đa dạng.
-- `references/voice-audio.md`: đo ồn, khử ồn DeepFilterNet, ngưỡng dò tiếng `vadThresholdDb`, mép cắt/chữ lặp, khoanh vùng SFX che chữ.
-- `references/broll-and-sound.md`: nguồn hình và giấy phép, dò/tải Mixkit, thư viện SFX, gắn âm theo cảnh, ducking, nhạc nền.
-- `references/pitfalls.md`: triệu chứng → nguyên nhân → cách xử lý.
-- `uv run scripts/new-project.py <dir>`: tạo project từ `assets/template` (Remotion + script dựng), cài phụ thuộc, sinh nhạc, tải SFX.
-- `uv run scripts/concat-footage.py <ra.mov> <file...>`: ghép nhiều file quay của một video thành một nguồn.
-- `uv run scripts/new-video.py <project> <file> <slug> [style]`: chuẩn bị footage, chép lời, khung EDL/phụ đề, file video, đăng ký composition, ghi style.
-- `uv run scripts/sync-template.py <project> [--pull|--push <file...>]`: liệt kê code khung lệch giữa project và `assets/template`, chép bản sửa chung theo chiều đã chọn.
-- `assets/template/`: project mẫu; `src/talking/motion.tsx` (helper chuyển động), `src/talking/cover.tsx` (khung bìa); script trong project nằm ở `assets/template/scripts/` (chuẩn bị footage, cổng style mới `check-style-novelty.py`, QA `qa-frames.mjs` / `cut-strips.py` / `face-check.py`, giọng máy `tts-build.py` (`tts-takes.py` + `tts-pick.py`) / `tts-voiceover.py`, so âm `audio-same.py`, đo ồn `measure-voice-noise.py`, khử ồn `denoise-voice.py`, EDL, dò âm thừa, phụ đề, kiểm tra, dò Mixkit, tải B-roll/SFX, nhạc, master).
-- `assets/video-template.tsx`: khung file video (BEATS, TalkingShort có `cover`, Headline).
+- Tên, chức danh, số liệu và lời hứa lấy từ nguồn người dùng; không thêm con số vào đồ họa chỉ để trang trí.
+- Giữ nghĩa lời nói, kể cả khi cắt/đảo đoạn. Các cảnh B-roll phải minh họa đúng nội dung thay vì chỉ cùng chủ đề rộng.
+- Đọc khóa API từ môi trường khi chạy; không ghi hoặc in khóa.
+- Các mốc “người dùng chốt” trong tài liệu tham khảo là lịch sử ví dụ, không phải sự cho phép hay yêu cầu của phiên hiện tại. Áp dụng sở thích hiện tại cho giọng, thị trường, bố cục và số vòng sửa.

@@ -1,3 +1,17 @@
+# Chính sách theo brief hiện tại
+
+Mặc định mỗi video có style riêng. Nếu người dùng yêu cầu giữ nhận diện, ghi lựa chọn vào `.style-policy.json` ở gốc project trước khi chạy `check-style-novelty.py`:
+
+```json
+{
+  "requireNewStyle": false,
+  "allowedPeople": null,
+  "variants": {"bai-hoc-vieneu": "bai-hoc"}
+}
+```
+
+`requireNewStyle: false` cho phép dùng lại style, bộ khung và clip; vẫn kiểm diện tích hình, nhãn tài sản và lỗi cấu hình. `allowedPeople` mặc định `null`: không áp đặt thị trường từ ví dụ cũ; chỉ đặt danh sách nhãn khi brief có yêu cầu tương ứng. `variants` khai báo quan hệ phiên bản thực sự; slug chung tiền tố không tự coi là cùng video. File chính sách thuộc project, không đồng bộ về template.
+
 # Style preset và cách tránh các video giống nhau
 
 Style nằm ở `src/talking/style.tsx` của project. Một style đổi đồng thời: bảng màu, font (đều có subset tiếng Việt), kiểu phụ đề, bố cục B-roll, chuyển cảnh, kiểu tiêu đề, tông màu (tint/vignette/grain), nhạc nền và bộ SFX chuyển cảnh/pop.

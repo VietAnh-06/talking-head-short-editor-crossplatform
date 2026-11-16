@@ -1,8 +1,6 @@
-# Giao code đồ họa cho sub-agent Sonnet, chạy song song
+# Chia việc đồ họa khi có delegation
 
-Người dùng chốt ngày 22/10/2026: code đồ họa (style mới và đồ họa đặc trưng) giao cho sub-agent chạy model `sonnet`, và các việc độc lập chạy song song. Lý do:
-- Ở video 007 (tien-013), viết style mới cộng ba đồ họa mất khoảng 10 phút, là khâu dài nhất của bước dựng hình.
-- Việc này là code theo mẫu có sẵn, Sonnet viết đủ tốt và nhanh hơn.
+Chỉ chia việc khi môi trường có công cụ delegation và hướng dẫn phiên hiện tại cho phép. Dùng model sẵn có hoặc lựa chọn của người dùng, không yêu cầu tên model cố định. Nếu không có delegation, thực hiện các phần dưới đây tuần tự; hợp đồng thiết kế vẫn giúp tránh sai bố cục.
 
 Model chính giữ những việc cần phán đoán: soát nội dung, chọn ẩn dụ và thiết kế, nối `BEATS`/`Headline` theo lời, duyệt still, critic, quyết sửa.
 
@@ -16,20 +14,20 @@ Model chính giữ những việc cần phán đoán: soát nội dung, chọn �
    - Danh sách đồ họa đặc trưng. Với mỗi đồ họa ghi: tên component, props (mốc khung truyền vào), nội dung chữ và số **lấy nguyên từ lời đã duyệt**, cách vào và ra.
 
    Model chính tự thêm hằng số bố cục vào `broll.tsx` (`export const <TÊN> = {...}`) và tên kiểu vào các union type trong `style.tsx` trước khi giao. Nhờ vậy agent B import được ngay mà không phải chờ agent A.
-2. **Giao song song trong một lượt gọi** (`Agent`, `model: "sonnet"`, `run_in_background: true`). Hai agent cùng chạy cùng lúc đọc giọng và sub-agent dò B-roll:
+2. **Giao các phần độc lập qua công cụ hiện có.** Khi được phép chạy song song, hai agent có thể chạy cùng lúc tạo giọng hoặc tìm B-roll:
    - **Agent A: style.** Được sửa `src/talking/style.tsx`, `src/talking/broll.tsx` (chỉ thêm nhánh/component mới, không sửa kiểu cũ), `src/talking/cover.tsx`, `scripts/check-style-novelty.py` (`SKELETON`, `BROLL_AREA`), `scripts/generate-music-beds.py`. Chạy sinh nhạc.
    - **Agent B: đồ họa đặc trưng.** Chỉ được sửa `src/videos/<slug>/overlays.tsx`.
    - Không agent nào sửa `src/videos/<slug>/<slug>-short.tsx`, registry hay `.style-ledger`. Các file đó thuộc model chính.
 3. **Model chính ráp lại:**
    - Nối `BEATS`, `Headline` và đồ họa vào file video.
    - Chạy `check-style-novelty.py` và `qa-frames.mjs`, đọc still, sửa bố cục, chạy critic trên still.
-   - Lỗi trong code của agent thì gửi tiếp cho đúng agent đó (`SendMessage`) kèm ảnh still và mô tả. Lỗi nhỏ thì tự sửa.
+   - Lỗi trong code của agent thì gửi tiếp cho đúng agent đó qua công cụ nhắn nội bộ kèm ảnh still và mô tả. Lỗi nhỏ thì tự sửa.
 
 ## Brief agent A (style)
 
 ```text
 Việc: viết style mới '<id>' cho project Remotion <thư mục project> theo hợp đồng thiết kế out/qa/<slug>-design.md.
-Đọc trước: file hợp đồng; ~/.claude/skills/talking-head-short-editor/references/style-presets.md (mục "Thêm style mới", "Bộ khung"),
+Đọc trước: file hợp đồng; <thư mục skill>/references/style-presets.md (mục "Thêm style mới", "Bộ khung"),
 motion-design.md; trong src/talking/: style.tsx (STYLES, FONT_LOADERS, PAGE), broll.tsx (mẫu gần nhất: <kiểu toàn trang gần nhất>,
 PageBackdrop, transitionStyle, các case của Headline), cover.tsx (biến thể theo st.broll).
 Được sửa: src/talking/style.tsx, src/talking/broll.tsx (chỉ THÊM nhánh/component/case mới), src/talking/cover.tsx,
@@ -49,7 +47,7 @@ Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
 
 ```text
 Việc: viết các component đồ họa đặc trưng cho video <slug> trong src/videos/<slug>/overlays.tsx theo hợp đồng out/qa/<slug>-design.md.
-Đọc trước: file hợp đồng; ~/.claude/skills/talking-head-short-editor/references/motion-design.md; mẫu src/videos/<video trước>/overlays.tsx;
+Đọc trước: file hợp đồng; <thư mục skill>/references/motion-design.md; mẫu src/videos/<video trước>/overlays.tsx nếu có;
 src/talking/motion.tsx, overlays-common.tsx (useWindow), sfx.tsx (tên SFX).
 Được sửa: chỉ src/videos/<slug>/overlays.tsx.
 Ràng buộc: đặt trong vùng đồ họa của hợp đồng (import hằng số bố cục từ ../../talking/broll), chừa cột nút TikTok bên phải 150 px

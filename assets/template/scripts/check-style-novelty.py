@@ -11,28 +11,44 @@ FAIL (thoát mã 1) khi:
   4. bộ khung (nền + chỗ đặt hình, suy từ bố cục B-roll) trùng video liền trước: người dùng thấy video 2 "styled giống
      video trước" dù khác 7/7 tên trục, vì cả hai đều là nền B-roll mờ + thẻ giấy ở giữa + phụ đề dưới (21/10/2026);
   5. dùng lại clip B-roll của video liền trước;
-  6. dùng clip có mặt người phương Tây (hoặc lẫn) hay clip chưa gắn nhãn trong public/broll/people-tags.jsonl: thị trường
-     là người Việt và người Hàn, người dùng chốt ưu tiên người châu Á (21/10/2026). Không có cảnh người châu Á hợp nghĩa
-     thì dùng cảnh tay, bóng người, đồ vật, phố Hàn/Việt.
+  6. clip chưa gắn nhãn trong public/broll/people-tags.jsonl hoặc không khớp allowedPeople khi brief có cấu hình;
   7. khung B-roll của bố cục nhỏ hơn MIN_BROLL_AREA diện tích khung dọc 1080×1920: clip Mixkit gần hết là 16:9 nên khung nhỏ
      làm hình minh họa bé tí (video 3–5 chỉ ~21%, người dùng chê 22/10/2026). Khung lớn thì cắt clip 16:9 sát chủ thể bằng
      focusX; ưu tiên clip dọc (dò Mixkit `vertical-<từ khóa>`).
 CẢNH BÁO (không chặn) về nhịp trong chính video: độ dài cảnh B-roll quá đều (hệ số biến thiên < 0,2), cảnh B-roll > 5 s,
 một tiếng SFX viết cứng trong file video/overlays dùng > 2 lần.
-Phiên bản của cùng một video (slug "<gốc>-<hậu tố>", ví dụ clip-12-vieneu là bản giọng đọc máy của clip-12) được dùng chung
-style với video gốc; vẫn phải khác mọi video khác. Người dùng đã chốt (10/2026): mỗi video tạo style mới hợp nội dung của nó.
+Chính sách .style-policy.json: requireNewStyle=false cho phép giữ nhận diện; allowedPeople mặc định null không lọc thị trường.
+Khai báo variants={"clip-12-vieneu":"clip-12"} để bản giọng máy được dùng style gốc; tiền tố slug không xác định quan hệ.
 """
 import json
 import re
+import statistics
 import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
 
-import numpy as np
-
 ROOT = Path(__file__).resolve().parent.parent
+if len(sys.argv) != 2 or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", sys.argv[1]):
+    sys.exit("Dùng: uv run scripts/check-style-novelty.py <slug>")
 SLUG = sys.argv[1]
+policy_path = ROOT / ".style-policy.json"
+try:
+    policy = json.loads(policy_path.read_text(encoding="utf-8")) if policy_path.exists() else {}
+    if not isinstance(policy, dict) or set(policy) - {"requireNewStyle", "allowedPeople", "variants"}:
+        raise ValueError("chỉ hỗ trợ requireNewStyle, allowedPeople và variants")
+    require_new_style = policy.get("requireNewStyle", True)
+    allowed_people = policy.get("allowedPeople")
+    variants = policy.get("variants", {})
+    if not isinstance(require_new_style, bool):
+        raise ValueError("requireNewStyle phải là boolean")
+    if allowed_people is not None and (not isinstance(allowed_people, list)
+                                       or not all(isinstance(p, str) for p in allowed_people)):
+        raise ValueError("allowedPeople phải là danh sách nhãn hoặc null")
+    if not isinstance(variants, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in variants.items()):
+        raise ValueError("variants phải là ánh xạ slug phiên bản → slug gốc")
+except (OSError, ValueError) as error:
+    sys.exit(f"{policy_path.name} không hợp lệ: {error}")
 MIN_DIFF = 4
 HISTORY = 3
 AXES = ("caption", "broll", "transition", "headline", "music", "fonts", "accent")
@@ -95,11 +111,11 @@ if mine not in styles:
 
 fails: list[str] = []
 def same_video(a: str, b: str) -> bool:
-    return a.startswith(b + "-") or b.startswith(a + "-")
+    return variants.get(a, a) == variants.get(b, b)
 
 
 shared = [s for s, st in entries if st == mine and s != SLUG and not same_video(s, SLUG)]
-if shared:
+if shared and require_new_style:
     fails.append(f"style '{mine}' đã dùng cho {', '.join(shared)}: tạo style mới cho {SLUG}")
 
 idx = order.index(SLUG)
@@ -111,7 +127,7 @@ for prev_slug, prev_style in history:
     same = [k for k in AXES if a[k] and a[k] == b[k]]
     diff = len(AXES) - len(same)
     print(f"so với {prev_slug} ({prev_style}): khác {diff}/{len(AXES)} trục" + (f", trùng: {', '.join(same)}" if same else ""))
-    if diff < MIN_DIFF:
+    if diff < MIN_DIFF and require_new_style:
         fails.append(f"chỉ khác {diff} trục với {prev_slug} (cần ≥ {MIN_DIFF} với mỗi video trong {HISTORY} video gần nhất)")
 
 prev_all = [(s_, st) for s_, st in entries[:idx] if not same_video(s_, SLUG)]
@@ -121,7 +137,7 @@ if prev_all:
     print(f"bộ khung: {' / '.join(ka) if ka else '?'} (video trước {last_slug}: {' / '.join(kb) if kb else '?'})")
     if ka is None:
         fails.append(f"bố cục '{styles[mine]['broll']}' chưa có trong SKELETON: khai báo nền / chỗ đặt hình / vùng phụ đề")
-    elif kb and ka[:2] == kb[:2]:
+    elif kb and ka[:2] == kb[:2] and require_new_style:
         fails.append(f"bộ khung trùng {last_slug} ({ka[0]} + {ka[1]}): đổi nền hoặc chỗ đặt hình, không chỉ đổi lớp trang trí")
 
     def clips(slug: str) -> set[str]:
@@ -129,13 +145,13 @@ if prev_all:
         return set(re.findall(r"clip: '([^']+)'", src))
 
     reused = sorted(clips(SLUG) & clips(last_slug))
-    if reused:
+    if reused and require_new_style:
         fails.append(f"dùng lại clip B-roll của {last_slug}: {', '.join(reused)}")
 
 others = [v for k, v in styles.items() if k != mine]  # kiểu mới tính theo style, nên bản phiên bản dùng chung vẫn đạt
 new_kinds = [f"{k}={styles[mine][k]}" for k in KINDS if all(o[k] != styles[mine][k] for o in others)]
 print(f"kiểu hình mới (chưa style nào khác dùng): {', '.join(new_kinds) or 'không có'}")
-if not new_kinds:
+if not new_kinds and require_new_style:
     fails.append("không có kiểu B-roll/chuyển cảnh/tiêu đề mới: viết ít nhất một kiểu mới trong broll.tsx")
 
 area = BROLL_AREA.get(styles[mine]["broll"])
@@ -155,7 +171,9 @@ if TAGS.exists():
 used = sorted(set(re.findall(r"clip: '([^']+)'", "\n".join(p.read_text(encoding="utf-8") for p in sorted((ROOT / f"src/videos/{SLUG}").glob("*.tsx"))))))
 ids = {c: re.sub(r"\D", "", c) for c in used}
 untagged = [c for c in used if ids[c] not in tags]
-western = [f"{c} ({tags[ids[c]]['desc']})" for c in used if ids[c] in tags and tags[ids[c]]["people"] in ("western", "mixed", "other") and tags[ids[c]].get("faces")]
+outside_market = [f"{c} ({tags[ids[c]].get('desc', '')})" for c in used
+                  if allowed_people is not None and ids[c] in tags and tags[ids[c]].get("faces")
+                  and tags[ids[c]].get("people") not in allowed_people]
 asian = sum(1 for c in used if tags.get(ids[c], {}).get("people") == "asian")
 print(f"người trong B-roll: {asian}/{len(used)} clip có người châu Á")
 
@@ -169,8 +187,8 @@ def is_vertical(clip: str) -> bool:
 print(f"clip dọc: {sum(map(is_vertical, used))}/{len(used)} (ưu tiên clip dọc: dò Mixkit `vertical-<từ khóa>`)")
 if untagged:
     fails.append(f"clip chưa gắn nhãn người trong {TAGS.name}: {', '.join(untagged)}")
-if western:
-    fails.append("clip lộ mặt người không phải châu Á, thay bằng người châu Á hoặc cảnh không lộ mặt: " + "; ".join(western))
+if outside_market:
+    fails.append("clip không khớp allowedPeople của brief hiện tại: " + "; ".join(outside_market))
 
 # --- nhịp trong chính video (cảnh báo, không chặn) ---
 warns: list[str] = []
@@ -219,8 +237,8 @@ if edit_path.exists() and "BEATS" in code:
     broll = [(t, (beats[i + 1][0] if i + 1 < len(beats) else speech_end) - t) for i, (t, k) in enumerate(beats) if k == "broll"]
     durs = [d for _, d in broll]
     if len(durs) >= 4:
-        cv = float(np.std(durs) / max(1e-6, float(np.mean(durs))))
-        print(f"B-roll: {len(durs)} cảnh, {np.mean(durs):.1f} ± {np.std(durs):.1f} s (hệ số biến thiên {cv:.2f})")
+        cv = statistics.pstdev(durs) / max(1e-6, statistics.mean(durs))
+        print(f"B-roll: {len(durs)} cảnh, {statistics.mean(durs):.1f} ± {statistics.pstdev(durs):.1f} s (hệ số biến thiên {cv:.2f})")
         if cv < 0.2:
             warns.append(f"độ dài cảnh B-roll quá đều (hệ số biến thiên {cv:.2f} < 0,2): xen cảnh nhanh 1–1,5 s với cảnh dài 3–4 s")
     long = [f"{t:.1f} s ({d:.1f} s)" for t, d in broll if d > 5]
@@ -237,4 +255,4 @@ for w in warns:
 if fails:
     print(f"FAIL {SLUG} ({mine}):\n  - " + "\n  - ".join(fails))
     sys.exit(1)
-print(f"ĐẠT {SLUG}: style '{mine}' là style mới")
+print(f"ĐẠT {SLUG}: style '{mine}' " + ("đạt yêu cầu phong cách mới" if require_new_style else "đạt chính sách giữ nhận diện"))

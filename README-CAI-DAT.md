@@ -97,11 +97,11 @@ Nếu dùng trình quản lý phiên bản như nvm/fnm/Volta, cấu hình của
 3. Mở Claude Code và nhờ nó dựng video, ví dụ "dựng video talking head từ file X" hoặc "làm video giọng đọc AI từ kịch bản này".
 4. Video có giọng máy: lần đầu, `tts-build.py` tải model VieNeu-TTS v3 Turbo từ Hugging Face.
 
-Kiểm bộ cài (không tải gì, không đổi hệ thống): `uv run python -m unittest discover -s tests -v`.
+Trong repository mã nguồn, kiểm Python và bộ cài (test không tải model, không cài công cụ hệ thống): `uv run python -m unittest discover -s tests -v`. Kiểm logic lấy khung QA: `node --test tests/qa-options.test.mjs`. Kiểm TypeScript: chạy `npm ci --no-audit --no-fund` rồi `npm run typecheck` trong `assets/template/` (bước npm cần mạng nếu chưa có cache). Thư mục `tests/` dành cho phát triển mã nguồn, không kèm bản skill được cài.
 
 ## Lưu ý
 - **Render:** render 70–90 s video mất 4–9 phút trên CPU 16 luồng. Mỗi lúc chỉ chạy một render, vì hai render cùng lúc dễ treo hoặc hết RAM.
 - **Nhạc nền:** không kèm file `.wav`. `new-project.py` tự sinh lại bằng `scripts/generate-music-beds.py`.
-- **Ví dụ và quy tắc:** các ví dụ (LETCO, kênh du học Hàn, mã video như `tien-015`, `tinhan-001`) và quy tắc "người dùng chốt ngày…" là kinh nghiệm từ các video đã làm. Muốn đổi thì sửa thẳng trong `SKILL.md` hoặc `references/`.
+- **Ví dụ và quy tắc:** tên kênh, mã video và mốc "người dùng chốt ngày…" là lịch sử các video cũ; brief hiện tại có ưu tiên. Nếu muốn giữ nhận diện hoặc chỉ định thị trường B-roll, dùng `.style-policy.json` trong project theo `references/style-presets.md`; không cần sửa skill chung.
 - **Giọng máy:** VieNeu Đoan Trang, temperature 0,1, top_k 10. Lời máy đọc bỏ dấu hỏi (đổi thành dấu chấm), vì dấu hỏi làm máy lên giọng cuối câu kiểu tiếng Anh. Phụ đề vẫn giữ dấu hỏi. Chi tiết ở `references/tts-voice-version.md`.
 - **B-roll và SFX:** lấy từ Mixkit (giấy phép Mixkit Free). Font Be Vietnam Pro và Noto Sans KR theo giấy phép OFL.

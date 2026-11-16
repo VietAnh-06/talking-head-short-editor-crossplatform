@@ -7,8 +7,10 @@
 Dùng: uv run scripts/master-loudness.py [out/<slug>.mp4 ...]
 """
 import json
+import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 from cross_platform import project_root, run
@@ -31,8 +33,16 @@ for src in sources:
     dst = f"out/final/{Path(src).name}"
     log = ffmpeg_log(["ffmpeg", "-hide_banner", "-nostats", "-i", src, "-af", "loudnorm=I=-14:TP=-1.5:LRA=7:print_format=json", "-f", "null", "-"])
     s = json.loads(log[log.rindex("{"):log.rindex("}") + 1])
-    run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-c:v", "copy",
-         "-af", f"loudnorm=I=-14:TP=-1.5:LRA=7:measured_I={s['input_i']}:measured_TP={s['input_tp']}:measured_LRA={s['input_lra']}"
-                f":measured_thresh={s['input_thresh']}:offset={s['target_offset']}:linear=true,aresample=48000",
-         "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", dst])
-    print(f"{dst}  {ebur128_summary(dst)}")
+    # Ghi cùng filesystem rồi thay nguyên tử; lỗi FFmpeg không phá bản master tốt trước đó.
+    with tempfile.NamedTemporaryFile(dir="out/final", prefix=f".{Path(src).stem}-", suffix=".mp4", delete=False) as handle:
+        pending = Path(handle.name)
+    try:
+        run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-c:v", "copy",
+             "-af", f"loudnorm=I=-14:TP=-1.5:LRA=7:measured_I={s['input_i']}:measured_TP={s['input_tp']}:measured_LRA={s['input_lra']}"
+                    f":measured_thresh={s['input_thresh']}:offset={s['target_offset']}:linear=true,aresample=48000",
+             "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", pending])
+        summary = ebur128_summary(pending)
+        os.replace(pending, dst)
+        print(f"{dst}  {summary}")
+    finally:
+        pending.unlink(missing_ok=True)

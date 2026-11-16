@@ -1,12 +1,12 @@
 # Critic sub-agent và so cặp bản dựng
 
-Người dựng tự duyệt ảnh của chính mình thường bỏ sót lỗi. Ví dụ clip-12: vạch chuyển cảnh kẹt suốt cảnh, che nhãn, chỉ được thấy ở vòng duyệt thứ hai. Vì vậy sau khi các script QA đã chạy, giao bằng chứng cho **một sub-agent riêng chỉ để tìm lỗi**, không để khen.
+Người dựng tự duyệt ảnh của chính mình có thể bỏ sót lỗi. Sau khi các script QA chạy, nếu công cụ và quyền delegation cho phép, giao bằng chứng cho một người đánh giá riêng chỉ tìm lỗi. Nếu không có, tự làm một lượt review riêng theo prompt dưới đây và ghi rõ giới hạn độc lập. Không yêu cầu model hay loại agent cố định.
 
 ## Khi nào chạy
 
 - Sau bước 10 (render → master → `verify-final.py`), trước khi báo người dùng.
 - Sau mỗi lượt sửa lớn (đổi track giọng, đổi nhịp B-roll, đổi style).
-- Tối đa 3 lượt critic → sửa → render. Lỗi còn lại sau lượt 3 thì báo người dùng, không sửa tiếp vô hạn.
+- Mặc định tối đa 3 lượt critic → sửa → render trước khi báo lại vấn đề chưa tiến triển. Yêu cầu lặp hoặc giới hạn của người dùng trong phiên hiện tại có ưu tiên; không dừng khi còn lỗi đã có cách sửa và người dùng yêu cầu tiếp tục.
 
 ## Chuẩn bị bằng chứng (chạy trong project)
 
@@ -20,7 +20,7 @@ uv run ./scripts/verify-final.py out/final/<slug>.mp4 > out/qa/<slug>-verify.txt
 
 Ảnh ghép lớn hơn khoảng 400 KB bị chặn đọc. Trước khi giao, thu nhỏ bằng `magick … -resize 1100x -quality 55`, hoặc chia nhiều tờ.
 
-## Giao việc cho critic (Agent tool, subagent_type `code-reviewer` hoặc `general-purpose`)
+## Brief cho critic hoặc lượt tự review
 
 Prompt mẫu (điền đường dẫn thật):
 
